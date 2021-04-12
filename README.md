@@ -32,7 +32,7 @@ The `Vulkan::Init` namespace contains Vulkan struct initializers. You can use th
 To use the library, copy headers to your local include directoty and then include `VulkanHelper.hpp` in your project to include it all.
 
 
-#### VULKAN INSTNACE CREATION : 
+#### VULKAN INSTANCE CREATION : 
 ```c++
 void CreateInstance(){
     // Names is just a vector of const char
