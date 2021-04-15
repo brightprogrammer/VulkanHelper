@@ -131,7 +131,7 @@ namespace Vulkan{
         * @return VkSwapchainCreateInfoKHR 
         */
         [[nodiscard]] inline VkSwapchainCreateInfoKHR SwapchainCreateInfo(const VkPhysicalDevice& physicalDevice, 
-            const VkSurfaceKHR& surface, Window& window) noexcept{
+            const VkSurfaceKHR& surface, SDL_Window* window) noexcept{
             // get surface information required for swapchain creation
             auto surfacePresentModes = Vulkan::GetPhysicalDeviceSurfacePresentModes(physicalDevice, surface);
             auto surfaceCapabilities = Vulkan::GetPhysicalDeviceSurfaceCapabilities(physicalDevice, surface);
@@ -143,7 +143,7 @@ namespace Vulkan{
             auto surfacePresentMode      = Vulkan::Tools::SelectSwapchainSurfacePresentMode(surfacePresentModes);
             
             // store image extent
-            auto swapchainImageExtent    = Vulkan::Tools::SelectSwapchainSurfaceImageExtent(window.GetHandle(), surfaceCapabilities);
+            auto swapchainImageExtent    = Vulkan::Tools::SelectSwapchainSurfaceImageExtent(window, surfaceCapabilities);
             
             // it is recommended to set minimum image count one more than given min count
             uint32 imageCount   = surfaceCapabilities.minImageCount + 1;
