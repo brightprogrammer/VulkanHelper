@@ -1,9 +1,10 @@
 /**
  * @file VulkanEnumStringifier.hpp
- * @author Siddharth Mishra (bshock665@gmail.com)
- * @brief Contains functions that convert Vulkan enums to strings.
+ * @author Siddharth Mishra (bshock665@gmail)
+ * @brief 
  * @version 0.1
- * @date 2021-04-07
+ * @date 2021-04-15
+ * 
  */
 
  /**
@@ -23,8 +24,8 @@
   * 
   */
 
-#ifndef VULKAN_ENUM_STRINGIFIER_HPP
-#define VULKAN_ENUM_STRINGIFIER_HPP
+#ifndef VULKAN_HELPER_VULKAN_ENUM_STRINGIFIER_HPP
+#define VULKAN_HELPER_VULKAN_ENUM_STRINGIFIER_HPP
 
 #include <vulkan/vulkan.h>
 

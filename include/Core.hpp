@@ -24,8 +24,9 @@
   * 
   */
 
-#ifndef CORE_HPP
-#define CORE_HPP
+  
+#ifndef VULKAN_HELPER_CORE_HPP
+#define VULKAN_HELPER_CORE_HPP
 
 #include <cstdint>
 #include <vector>
@@ -46,14 +47,34 @@ typedef std::vector<const char*> Names;
  *        debug message
  * 
  */
+#ifndef SETTING_DONT_ASSERT
 #define ASSERT(b, ...) \
     if(!(b)){ \
-        printf("ASSERT::FAILURE [ %s ]\n", #b); \
+        printf("\nASSERT::FAILURE [ %s ]\n", #b); \
         printf("ERROR RAISED FROM FILE[ %s ]@FUNCTION[ %s ]@LINE[ %i ]\n", __FILE__, __FUNCTION__, __LINE__); \
+        printf("\t"); \
         printf(__VA_ARGS__); \
-        printf("\n"); \
+        printf("\n\n"); \
         exit(-1); \
     }
+#endif//SETTING_DONT_ASSERT
 
+// if produce logs is defined then logging macro will be defined else it will be empty
+#ifndef SETTING_DONT_GENERATE_LOG
+    // simple log macro
+    #define LOG(severity, ...) { \
+        printf("\n[%s] : GENERATED FROM FILE[ %s ]@FUNCTION[ %s ]@LINE[ %i ]\n", #severity, __FILE__, __FUNCTION__, __LINE__); \
+        printf("\t"); \
+        printf(__VA_ARGS__); \
+        printf("\n\n"); \
+    }
+#else
+    #define LOG(...)
+#endif//SETTING_DONT_GENERATE_LOG
+
+#ifndef SETTING_DONT_CHECK_VULKAN_HANDLES
+    #define CHECK_VULKAN_HANDLE(VulkanHandle) \
+        ASSERT(VulkanHandle != VK_NULL_HANDLE, "Invalid Vulkan handle passed as parameter [ parameter name : %s ]", #VulkanHandle)
+#endif
 
 #endif//CORE_HPP

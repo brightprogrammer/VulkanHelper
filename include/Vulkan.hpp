@@ -4,9 +4,12 @@
  * @brief Vulkan Helper Functions. Contains Vulkan C functions wrappers that return/use C++ containers.
  * @version 0.1
  * @date 2021-04-05
+ * 
+ * @copyright Copyright (c) 2021 Siddharth Mishra, All Rights Reserved.
+ * 
  */
 
-  /**
+ /**
   * @copyright Copyright 2021 Siddharth Mishra
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,8 +26,9 @@
   * 
   */
 
-#ifndef BHAYANKAR_VULKAN_HPP
-#define BHAYANKAR_VULKAN_HPP
+
+#ifndef VULKAN_HELPER_VULKAN_HPP
+#define VULKAN_HELPER_VULKAN_HPP
 
 #include <SDL2/SDL_error.h>
 #include <SDL2/SDL_video.h>
@@ -47,21 +51,21 @@ namespace Vulkan{
      * @param res of a function
      */
     inline void CheckResult(VkResult res){
-        ASSERT(res == VK_SUCCESS, "\tFAILED -> returned : %s", ResultString(res));
+        ASSERT(res == VK_SUCCESS, "FAILED -> returned : %s", ResultString(res));
     }
 
-    /**
-    * @brief Checks whether a Vulkan handle is valid or not
-    * 
-    * @tparam VulkanHandleType type of Vulkan handle : automatically deduced
-    * @param handle : const reference to Vulkan handle
-    * @return true  : valid handle
-    * @return false : invalid handle
-    */
-    template<typename VulkanHandleType>
-    [[nodiscard]] inline bool CheckValidHandle(const VulkanHandleType& handle){
-        return handle != VK_NULL_HANDLE;
-    }
+    // /**
+    // * @brief Checks whether a Vulkan handle is valid or not
+    // * 
+    // * @tparam VulkanHandleType type of Vulkan handle : automatically deduced
+    // * @param handle : const reference to Vulkan handle
+    // * @return true  : valid handle
+    // * @return false : invalid handle
+    // */
+    // template<typename VulkanHandleType>
+    // [[nodiscard]] inline bool CheckValidHandle(const VulkanHandleType& handle){
+    //     return handle != VK_NULL_HANDLE;
+    // }
 
     /**
     * @brief get the list of instance extensions available on host
@@ -179,7 +183,7 @@ namespace Vulkan{
     */
     inline void DestroyInstance(const VkInstance& instance, const VkAllocationCallbacks* allocator = nullptr) noexcept{
         // check for errors
-        ASSERT(CheckValidHandle(instance), "\tInvalid instance given\n");
+        CHECK_VULKAN_HANDLE(instance);
 
         // destroy instance
         vkDestroyInstance(instance, allocator);
@@ -201,13 +205,47 @@ namespace Vulkan{
         
         // check sucess
         ASSERT( resInstanceCreation == VK_SUCCESS, 
-            "\tVulkan Instance creation failed -> returned : %s\n", ResultString(resInstanceCreation));
+            "Vulkan Instance creation failed -> returned : %s", ResultString(resInstanceCreation));
 
         // print success
-        printf("[CreateInstance] : Vulkan Instance created\n");
+        LOG(success, "[CreateInstance] : Vulkan Instance created");
 
         // return instance handle
         return instance;
+    }
+
+    /**
+    * @brief get the list of surface extension names that are available on
+    *        host platform
+    * 
+    * @return Names : vector of const char* containing surfaces extension names
+    */
+    [[nodiscard]] inline Names GetSurfaceExtensions(){
+        // names of extensions that will be returned
+        Names extensions;
+        // names of all extensions
+        Names availableExtensions = EnumerateInstanceExtensionNames();
+        // names of platform specifc surface extensions
+        Names surfaceExtensions{
+            "VK_KHR_surface"        ,        
+            "VK_KHR_xcb_surface"    ,
+            "VK_KHR_xlib_surface"   ,
+            "VK_KHR_wayland_surface",
+            "VK_KHR_win32_surface"  ,
+            "VK_MVK_ios_surface"    ,
+            "VK_MVK_macos_surface"  ,
+            "VK_EXT_metal_surface"  ,
+            "VK_KHR_android_surface"
+        };
+        
+        // this will enable all surface extensions that are available
+        for(const auto extension : surfaceExtensions){
+            if(CheckAvailability(availableExtensions, extension))
+                extensions.push_back(extension);
+        }
+
+        // return names of available surface extensions
+        return extensions;
     }
 
     /**
@@ -218,20 +256,20 @@ namespace Vulkan{
     */
     [[nodiscard]] inline std::vector<VkPhysicalDevice> EnumeratePhysicalDevices(const VkInstance& instance) noexcept{
         // check for valid instance handle
-        ASSERT(CheckValidHandle(instance), "\tInvalid Vulkan instnace handle\n");
+        CHECK_VULKAN_HANDLE(instance)
 
         // get device count
         uint32 count;
         VkResult res = vkEnumeratePhysicalDevices(instance, &count, nullptr);
-        if(res != VK_SUCCESS) printf("[EnumeratePhysicalDevices] : %s\n", ResultString(res));
+        if(res != VK_SUCCESS) LOG(error, "[EnumeratePhysicalDevices] : %s", ResultString(res));
 
         // check physical device count
-        ASSERT(count > 0, "\tNo Vulkan capable Physical Devices found on host\t");
+        ASSERT(count > 0, "No Vulkan capable Physical Devices found on host");
 
         // get devices
         std::vector<VkPhysicalDevice> devices(count);
         res = vkEnumeratePhysicalDevices(instance, &count, devices.data());
-        if(res != VK_SUCCESS) printf("[EnumeratePhysicalDevices] : %s\n", ResultString(res));
+        if(res != VK_SUCCESS) LOG(error, "[EnumeratePhysicalDevices] : %s", ResultString(res));
 
         // return device list
         return devices;
@@ -245,7 +283,7 @@ namespace Vulkan{
     */
     [[nodiscard]] inline VkPhysicalDeviceProperties GetPhysicalDeviceProperties(const VkPhysicalDevice& physicalDevice) noexcept{
         // check for valid handle
-        ASSERT(CheckValidHandle(physicalDevice), "\tInvalid Physical Device given\n");
+        CHECK_VULKAN_HANDLE(physicalDevice)
         
         // get and return properties
         VkPhysicalDeviceProperties properties;
@@ -261,7 +299,7 @@ namespace Vulkan{
     */
     [[nodiscard]] inline VkPhysicalDeviceMemoryProperties GetPhysicalDeviceMemoryProperties(const VkPhysicalDevice& physicalDevice) noexcept{
         // check for valid handle
-        ASSERT(CheckValidHandle(physicalDevice), "\tInvalid Physical Device given\n");
+        CHECK_VULKAN_HANDLE(physicalDevice)
 
         // get properties
         VkPhysicalDeviceMemoryProperties memoryProperties;
@@ -277,7 +315,7 @@ namespace Vulkan{
     */
     [[nodiscard]] inline VkPhysicalDeviceFeatures GetPhysicalDeviceFeatures(const VkPhysicalDevice& physicalDevice) noexcept{
         // check for valid handle
-        ASSERT(CheckValidHandle(physicalDevice), "\tInvalid Physical Device given\n");
+        CHECK_VULKAN_HANDLE(physicalDevice)
         
         // get and return properties
         VkPhysicalDeviceFeatures features;
@@ -293,10 +331,10 @@ namespace Vulkan{
      */
     inline void DestroySurface(const VkInstance& instance, const VkSurfaceKHR& surface) noexcept{
         // check for valid instance handle
-        ASSERT(CheckValidHandle(instance), "\tInvalid Vulkan instance handle given\n");
+        CHECK_VULKAN_HANDLE(instance)
 
         // check for valid surface handle
-        ASSERT(CheckValidHandle(surface), "\tInvalid Surface handle given\n");
+        CHECK_VULKAN_HANDLE(surface)
 
         // destroy surface
         vkDestroySurfaceKHR(instance, surface, nullptr);
@@ -306,12 +344,15 @@ namespace Vulkan{
     * @brief create a Vulkan surface for given instance and window
     * 
     * @param instance const ref to valid VkInstance handle
-    * @param window pointer to valid sdl valid window
+    * @param window ref to valid window
     * @return VkSurfaceKHR 
     */
     [[nodiscard]] inline VkSurfaceKHR CreateSurface(const VkInstance& instance, SDL_Window* window) noexcept{
         // check for valid instance handle
-        ASSERT(CheckValidHandle(instance), "\tInvalid Vulkan instance handle given\n");
+        CHECK_VULKAN_HANDLE(instance)
+
+        // check for valid window pointer
+        ASSERT(window != nullptr, "[CreateSurface] : Invalid SDL_Window pointer passed");
 
         // surface handle
         VkSurfaceKHR surface;
@@ -320,10 +361,10 @@ namespace Vulkan{
         SDL_bool resSurfaceCreated = SDL_Vulkan_CreateSurface(window, instance, &surface);
 
         // check success
-        ASSERT(resSurfaceCreated, "\tSurface creation failed\n\t\tERROR MESSAGE : %s", SDL_GetError());
+        ASSERT(resSurfaceCreated, "Surface creation failed\n\t\tERROR MESSAGE : %s", SDL_GetError());
 
         // print success
-        printf("[CreateSurface] : Created Surface for Window[%s]\n", SDL_GetWindowTitle(window));
+        LOG(success, "[CreateSurface] : Created Surface for Window[%s]", SDL_GetWindowTitle(window));
 
         // return surface handle
         return surface;
@@ -337,17 +378,17 @@ namespace Vulkan{
      */
     [[nodiscard]] inline Names EnumerateDeviceExtensionNames(const VkPhysicalDevice& physicalDevice){
         // check valid handle
-        ASSERT(CheckValidHandle(physicalDevice), "\tInvalid Physical Device handle given\n");
-
+        CHECK_VULKAN_HANDLE(physicalDevice)
+        
         // get extension count
         uint32 count;
         VkResult res = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &count, nullptr);
-        if(res != VK_SUCCESS) printf("[EnumerateDeviceExtensionNames] : %s\n", ResultString(res));
+        if(res != VK_SUCCESS) LOG(error, "[EnumerateDeviceExtensionNames] : %s", ResultString(res));
 
         // get extension properties
         std::vector<VkExtensionProperties> extensions(count);
         res = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &count, extensions.data());
-        if(res != VK_SUCCESS) printf("[EnumerateDeviceExtensionNames] : %s\n", ResultString(res));
+        if(res != VK_SUCCESS) LOG(error, "[EnumerateDeviceExtensionNames] : %s", ResultString(res));
 
         // create a vector and add the names to it
         std::vector<const char*> extensionNames(count);
@@ -367,7 +408,7 @@ namespace Vulkan{
     */
     [[nodiscard]] inline std::vector<VkQueueFamilyProperties> GetPhysicalDeviceQueueFamilyProperties(const VkPhysicalDevice& physicalDevice) noexcept{
         // check for valid physical device handle
-        ASSERT(CheckValidHandle(physicalDevice), "\tInvalid Physical Device handle given\n");
+        CHECK_VULKAN_HANDLE(physicalDevice)
         
         // get queue family properties
         uint32 count;
@@ -380,6 +421,186 @@ namespace Vulkan{
     }
 
     /**
+    * @brief get queue index of given queue family from list of queue families
+    * 
+    * @param queueFamilyProperties 
+    * @param flag 
+    * @return std::optional<uint32> 
+    */
+    [[nodiscard]] inline std::optional<uint32> GetPhysicalDeviceQueueFamilyIndex(const std::vector<VkQueueFamilyProperties>& queueFamilyProperties, const VkQueueFlagBits& flag){
+        // check for queue index
+        std::optional<uint32> queueIdx;
+        for(uint32 i = 0; i<queueFamilyProperties.size();  i++){
+            if(queueFamilyProperties[i].queueFlags & flag) queueIdx = i;
+        }
+
+        // return queue index
+        return queueIdx;
+    }
+
+    /**
+    * @brief get queue index of given queue family from list of queue families.
+    *        use the other function if you already have queue properties enumerated.
+    * 
+    * @param queueFamilyProperties 
+    * @param flag 
+    * @return std::optional<uint32> 
+    */
+    [[nodiscard]] inline std::optional<uint32> GetPhysicalDeviceQueueFamilyIndex(const VkPhysicalDevice& physicalDevice, const VkQueueFlagBits& flag){
+        // check valid physical device handle
+        CHECK_VULKAN_HANDLE(physicalDevice)
+
+        // get queue family properties
+        std::vector<VkQueueFamilyProperties> queueFamilyProperties = GetPhysicalDeviceQueueFamilyProperties(physicalDevice);
+        
+        // check for queue index
+        std::optional<uint32> queueIdx;
+        for(uint32 i = 0; i<queueFamilyProperties.size();  i++){
+            if(queueFamilyProperties[i].queueFlags & flag) queueIdx = i;
+        }
+
+        // return queue index
+        return queueIdx;
+    }
+
+    /**
+    * @brief get queue index of queue family that supports surface presentation
+    * 
+    * @param physicalDevice handle
+    * @param surface handle
+    * @return std::optional<uint32> : optional value meaning, the queue may or may not be present
+    *         so be sure to check 
+    */
+    [[nodiscard]] inline std::optional<uint32> GetPhysicalDeviceSurfaceSupportQueueIndex(const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface){
+        // check valid physical device handle
+        CHECK_VULKAN_HANDLE(physicalDevice)
+
+        // check valid surface handle
+        CHECK_VULKAN_HANDLE(surface)
+
+        // get physical device queues
+        std::vector<VkQueueFamilyProperties> queues = GetPhysicalDeviceQueueFamilyProperties(physicalDevice);
+
+        // presentation queue index
+        std::optional<uint32> presentationQueueIdx;
+
+        // check which queue supports presentation
+        for(uint i=0; i<queues.size(); i++){
+            VkBool32 presentationSupported;
+            VkResult res = vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice , i, surface, &presentationSupported);
+            if(res != VK_SUCCESS) LOG(error, "[GetPhysicalDeviceSurfaceSupportQueueIndex] : %s", ResultString(res));
+            if(presentationSupported){
+                presentationQueueIdx = i;
+                break;
+            }
+        }
+
+        return presentationQueueIdx;
+    }
+
+    /**
+    * @brief the default physical device rating system
+    * 
+    * @param physicalDevice handle
+    * @param surface optional surface handle. given surface improves device selection.
+    *        on some platforms future calls on selected physical device may fail if
+    *        if doesn't support surface presentation. It is highly recommended to pass
+    *        a valid surface handle.
+    * @return uint32 :score of this physical device
+    */
+    [[nodiscard]] inline uint32 RatePhysicalDevice(const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface = VK_NULL_HANDLE){
+        // check physical device
+        CHECK_VULKAN_HANDLE(physicalDevice)
+        
+        // device score
+        uint32 score = 0;
+
+        // get physical device information
+        VkPhysicalDeviceProperties properties = GetPhysicalDeviceProperties(physicalDevice);
+        VkPhysicalDeviceMemoryProperties memoryProperties = GetPhysicalDeviceMemoryProperties(physicalDevice);
+        VkPhysicalDeviceFeatures features = GetPhysicalDeviceFeatures(physicalDevice);
+
+        score += properties.limits.maxColorAttachments * 100;
+        score += properties.limits.maxDescriptorSetInputAttachments * 100;
+        score += properties.limits.maxImageDimension2D * 1000;
+        score += properties.limits.maxImageArrayLayers * 10;
+        score += properties.limits.maxViewports * 500;
+
+        score += memoryProperties.memoryHeapCount * 1000;
+
+        if(features.multiViewport == VK_TRUE)
+            score += 500;
+
+        // get queue properties
+        std::vector<VkQueueFamilyProperties> queues = GetPhysicalDeviceQueueFamilyProperties(physicalDevice);
+        
+        // if device doesn't provide graphics queue then set score to 0
+        for(const auto& queue : queues){
+            // since graphics is most important queue
+            if(queue.queueFlags & VK_QUEUE_GRAPHICS_BIT){
+                score += 100000; // 1L or 100 Th
+            }
+
+            // since compute is less important that graphics
+            if(queue.queueFlags & VK_QUEUE_COMPUTE_BIT){
+                score += 50000; // 50 Th
+            }
+        }
+
+        // rate physical device based on surface currently bound to VulkanState<id>
+        // if surface is bound to VulkanState before device selection then that means
+        // user wants to show images onto a window
+        // for this we check if device provides a presentation queue for the given surface
+        if(surface != VK_NULL_HANDLE){
+            // if surface is bound to the given VulkanState
+            // then check if device supports surface presentation or not
+            uint i = 0;
+            VkBool32 presentationSupported;
+            for(const auto& queue : queues){
+                vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentationSupported);
+                if(presentationSupported) break; else i++;
+            }
+
+            // it may happen that we reached the end and we never got the queue
+            // in that case we have to check it differently
+            if(i+1 == queues.size() && !presentationSupported) score = 0;
+            else score += 110000;
+        }else{
+            LOG(warning, "IT IS RECOMMENDED TO CREATE A SURFACE (if needed) BEFORE DEVICE SELECTION FOR BETTER DEVICE SELECTION");
+        }
+
+        // get device extension names
+        Names extensions = EnumerateDeviceExtensionNames(physicalDevice);
+
+        // check if swapchain extension is present or not
+        bool swapchainExtensionAvailable = false;
+        for(const auto& extension : extensions){
+            if(strcmp(extension, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0)
+                swapchainExtensionAvailable = true;
+        }
+
+        // no swapchain means no multi-image rendering
+        if(!swapchainExtensionAvailable)
+            score = 0;
+
+        // if surface handle is given
+        // then check for availablity of present modes and formats
+        if(surface != VK_NULL_HANDLE){
+            // get surfacepresent modes
+            uint32 count = 0;
+            vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, nullptr);
+            if(count == 0) score = 0; // set score 0 if no present modes are available
+
+            // get surface formts
+            count = 0;
+            VkResult res = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, nullptr);
+            if(count == 0) score = 0;
+        }
+
+        return score;
+    }
+
+    /**
      * @brief Destroy given device
      * 
      * @param device 
@@ -387,7 +608,7 @@ namespace Vulkan{
      */
     inline void DestroyDevice(const VkDevice& device, const VkAllocationCallbacks* allocator = nullptr) noexcept{
         // check for valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle given\n");
+        CHECK_VULKAN_HANDLE(device)
 
         // destroy logical device
         vkDestroyDevice(device, allocator);
@@ -403,7 +624,7 @@ namespace Vulkan{
     */
     [[nodiscard]] inline VkDevice CreateDevice(const VkPhysicalDevice& physicalDevice, const VkDeviceCreateInfo& deviceCreateInfo, const VkAllocationCallbacks* allocator = nullptr){
         // check if a physical device is bound to VulkanState
-        ASSERT(CheckValidHandle(physicalDevice), "\tInvalid Physical Device handle passed");
+        CHECK_VULKAN_HANDLE(physicalDevice)
 
         // logical device handle
         VkDevice device;
@@ -414,10 +635,10 @@ namespace Vulkan{
 
         // check if device creation is successful
         ASSERT( resLogicalDeviceCreation == VK_SUCCESS, 
-            "\tLogical Device creation failed -> returned : %s\n", ResultString(resLogicalDeviceCreation));
+            "Logical Device creation failed -> returned : %s", ResultString(resLogicalDeviceCreation));
 
         // print success message
-        printf("[CreateDevice] : Logical Device creation successful\n");
+        LOG(success, "[CreateDevice] : Logical Device creation successful");
 
         return device;
     }
@@ -432,7 +653,7 @@ namespace Vulkan{
     */
     [[nodiscard]] inline VkQueue GetDeviceQueue(const VkDevice& device, const uint32& queueFamilyIdx, const uint32& queueIdx){
         // check if device is bound or not
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // get queue
         VkQueue queue;
@@ -451,15 +672,15 @@ namespace Vulkan{
     */
     [[nodiscard]] inline VkSurfaceCapabilitiesKHR GetPhysicalDeviceSurfaceCapabilities(const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface) noexcept{
         // check physical device handle
-        ASSERT(CheckValidHandle(physicalDevice), "\tInvalid Physical Device handle passed");
+        CHECK_VULKAN_HANDLE(physicalDevice)
         
         // check surface handle
-        ASSERT(CheckValidHandle(surface), "\tInvalid Surface handle passed");
+        CHECK_VULKAN_HANDLE(surface)
         
         // get capabilities
         VkSurfaceCapabilitiesKHR capabilities;
         VkResult res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities);
-        if(res != VK_SUCCESS) printf("[GetPhysicalDeviceSurfaceCapabilities] : %s\n", ResultString(res));
+        if(res != VK_SUCCESS) LOG(error, "[GetPhysicalDeviceSurfaceCapabilities] : %s", ResultString(res));
 
         return capabilities;
     }
@@ -473,20 +694,20 @@ namespace Vulkan{
     */
     [[nodiscard]] inline std::vector<VkPresentModeKHR> GetPhysicalDeviceSurfacePresentModes(const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface){
         // check physical device handle
-        ASSERT(CheckValidHandle(physicalDevice), "\tInvalid Physical Device handle given");
+        CHECK_VULKAN_HANDLE(physicalDevice)
 
         // check surface handle
-        ASSERT(CheckValidHandle(surface), "\tInvalid surface handle given");
+        CHECK_VULKAN_HANDLE(surface)
 
         // get mode count
         uint32 modeCount;
         VkResult res = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &modeCount, nullptr);
-        if(res != VK_SUCCESS) printf("[GetPhysicalDeviceSurfacePresentModes] : %s\n", ResultString(res));
+        if(res != VK_SUCCESS) LOG(error, "[GetPhysicalDeviceSurfacePresentModes] : %s", ResultString(res));
 
         // get modes
         std::vector<VkPresentModeKHR> presentModes(modeCount);
         res = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &modeCount, presentModes.data());
-        if(res != VK_SUCCESS) printf("[GetPhysicalDeviceSurfacePresentModes] : %s\n", ResultString(res));
+        if(res != VK_SUCCESS) LOG(error, "[GetPhysicalDeviceSurfacePresentModes] : %s", ResultString(res));
 
         return presentModes;
     }
@@ -499,21 +720,21 @@ namespace Vulkan{
     * @return std::vector<VkSurfaceFormatKHR> 
     */
     [[nodiscard]] inline std::vector<VkSurfaceFormatKHR> GetPhysicalDeviceSurfaceFormats(const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface){
-    // check physical device handle
-        ASSERT(CheckValidHandle(physicalDevice), "\tInvalid Physical Device handle given");
-
+        // check physical device handle
+        CHECK_VULKAN_HANDLE(physicalDevice)
+        
         // check surface handle
-        ASSERT(CheckValidHandle(surface), "\tInvalid surface handle given");
+        CHECK_VULKAN_HANDLE(surface)
 
         // get format count
         uint32 formatCount;
         VkResult res = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
-        if(res != VK_SUCCESS) printf("[GetPhysicalDeviceSurfaceFormats] : %s\n", ResultString(res));
+        if(res != VK_SUCCESS) LOG(error, "[GetPhysicalDeviceSurfaceFormats] : %s", ResultString(res));
 
         // get formats
         std::vector<VkSurfaceFormatKHR> formats(formatCount);
         res = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats.data());    
-        if(res != VK_SUCCESS) printf("[GetPhysicalDeviceSurfaceFormats] : %s\n", ResultString(res));
+        if(res != VK_SUCCESS) LOG(error, "[GetPhysicalDeviceSurfaceFormats] : %s", ResultString(res));
 
         return formats;
     }
@@ -527,10 +748,10 @@ namespace Vulkan{
      */
     inline void DestroySwapchain(const VkDevice& device, const VkSwapchainKHR& swapchain,  const VkAllocationCallbacks* allocator = nullptr) noexcept{
         // check for valid instance handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle given\n");
+        CHECK_VULKAN_HANDLE(device)
 
-        // check for valid surface handle
-        ASSERT(CheckValidHandle(swapchain), "\tInvalid Swapchain handle given\n");
+        // check for valid swapchain handle
+        CHECK_VULKAN_HANDLE(swapchain)
     
         // destroy swapchain
         vkDestroySwapchainKHR(device, swapchain, nullptr);
@@ -546,7 +767,7 @@ namespace Vulkan{
     */
     [[nodiscard]] inline VkSwapchainKHR CreateSwapchain(const VkDevice& device, const VkSwapchainCreateInfoKHR& swapchainCreateInfo, const VkAllocationCallbacks* allocator = nullptr){
         // check for valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Physical Device handle given");
+        CHECK_VULKAN_HANDLE(device)
         
         // swpachain handle
         VkSwapchainKHR swapchain;
@@ -557,10 +778,10 @@ namespace Vulkan{
 
         // check for success
         ASSERT(resSwapchainCreated == VK_SUCCESS, 
-            "\tFailed to create Swapchain -> returned : %s", ResultString(resSwapchainCreated));
+            "Failed to create Swapchain -> returned : %s", ResultString(resSwapchainCreated));
 
         // print success message
-        printf("[CreateSwapchain] : Swapchain creation successful\n");
+        LOG(success, "[CreateSwapchain] : Swapchain creation successful");
 
         return swapchain;
     }
@@ -574,20 +795,20 @@ namespace Vulkan{
      */
     [[nodiscard]] inline std::vector<VkImage> GetSwapchainImages(const VkDevice& device, const VkSwapchainKHR& swapchain) noexcept{
         // check swapchain handle
-        ASSERT(CheckValidHandle(swapchain), "\tInvalid Swapchain handle passed");
+        CHECK_VULKAN_HANDLE(swapchain)
 
         // check device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // get image count
         uint32 count;
         VkResult res = vkGetSwapchainImagesKHR(device, swapchain, &count, nullptr);
-        if(res != VK_SUCCESS) printf("[GetSwapchainImages] : %s\n", ResultString(res));
+        if(res != VK_SUCCESS) LOG(error, "[GetSwapchainImages] : %s", ResultString(res));
         
         // get images
         std::vector<VkImage> images(count);
         res = vkGetSwapchainImagesKHR(device, swapchain, &count, images.data());
-        if(res != VK_SUCCESS) printf("[GetSwapchainImages] : %s\n", ResultString(res));
+        if(res != VK_SUCCESS) LOG(error, "[GetSwapchainImages] : %s", ResultString(res));
 
         return images;
     }
@@ -601,7 +822,10 @@ namespace Vulkan{
      */
     inline void DestroyImageView(const VkDevice& device, const VkImageView& imageView, const VkAllocationCallbacks* allocator = nullptr) noexcept{
         // check valid logical device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
+
+        // check image view handle
+        CHECK_VULKAN_HANDLE(imageView)
         
         // destroy image view
         vkDestroyImageView(device, imageView, allocator);
@@ -617,7 +841,7 @@ namespace Vulkan{
      */
     [[nodiscard]] inline VkImageView CreateImageView(const VkDevice& device, const VkImageViewCreateInfo& ivCreateInfo, const VkAllocationCallbacks* allocator = nullptr) noexcept{
         // check valid handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // image view
         VkImageView imageView;
@@ -627,10 +851,10 @@ namespace Vulkan{
         
         // check success
         ASSERT(resImageViewCreateInfo == VK_SUCCESS, 
-            "\t[CreateImageView] : Image View creation failed -> returned %s", ResultString(resImageViewCreateInfo));
+            "[CreateImageView] : Image View creation failed -> returned %s", ResultString(resImageViewCreateInfo));
 
         // print success
-        printf("[CreateImageView] : Image View creation successful\n");
+        LOG(success, "[CreateImageView] : Image View creation successful");
 
         // return
         return imageView;
@@ -645,11 +869,11 @@ namespace Vulkan{
      */
     inline void DestroyCommandPool(const VkDevice& device, const VkCommandPool& commandPool, const VkAllocationCallbacks* allocator = nullptr){
         // check device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical sDevice handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // check command pool handle
-        ASSERT(CheckValidHandle(commandPool), "\tInvalid Command Pool handle passed");
-    
+        CHECK_VULKAN_HANDLE(commandPool)
+
         // destroy
         vkDestroyCommandPool(device, commandPool, allocator);
     }
@@ -664,7 +888,7 @@ namespace Vulkan{
      */
     [[nodiscard]] inline VkCommandPool CreateCommandPool(const VkDevice& device, const VkCommandPoolCreateInfo& commandPoolInfo, const VkAllocationCallbacks* allocator = nullptr){
         // check device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical sDevice handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // command pool
         VkCommandPool commandPool;
@@ -673,10 +897,10 @@ namespace Vulkan{
         VkResult resCreateCommandPool = vkCreateCommandPool(device, &commandPoolInfo, allocator, &commandPool);
     
         // check success
-        ASSERT(resCreateCommandPool == VK_SUCCESS, "\tCommand Pool creation failed -> returned %s", ResultString(resCreateCommandPool));
+        ASSERT(resCreateCommandPool == VK_SUCCESS, "Command Pool creation failed -> returned %s", ResultString(resCreateCommandPool));
     
         // print success
-        printf("[CreateCommandPool] : Command Pool creation successful\n");
+        LOG(success, "[CreateCommandPool] : Command Pool creation successful");
 
         // return
         return commandPool;
@@ -691,7 +915,7 @@ namespace Vulkan{
      */
     [[nodiscard]] inline std::vector<VkCommandBuffer> AllocateCommandBuffers(const VkDevice& device, const VkCommandBufferAllocateInfo& cmdBufAllocInfo){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // command buffers
         std::vector<VkCommandBuffer> commandBuffers(cmdBufAllocInfo.commandBufferCount);
@@ -700,10 +924,10 @@ namespace Vulkan{
         VkResult resAllocateCommandBuffers = vkAllocateCommandBuffers(device, &cmdBufAllocInfo, commandBuffers.data());
     
         // check success
-        ASSERT(resAllocateCommandBuffers == VK_SUCCESS, "\tCommand Buffer allocation failed -> returned : %s", ResultString(resAllocateCommandBuffers));
+        ASSERT(resAllocateCommandBuffers == VK_SUCCESS, "Command Buffer allocation failed -> returned : %s", ResultString(resAllocateCommandBuffers));
     
         // print success
-        printf("[AllocateCommandBuffers] : %i Command Buffers allocated successfully\n", static_cast<uint>(commandBuffers.size()));
+        LOG(success, "[AllocateCommandBuffers] : %i Command Buffers allocated successfully", static_cast<uint>(commandBuffers.size()));
 
         // return
         return commandBuffers;
@@ -718,10 +942,10 @@ namespace Vulkan{
      */
     inline void DestroyRenderPass(const VkDevice& device, const VkRenderPass& renderpass, const VkAllocationCallbacks* allocator = nullptr){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // check valid renderpass handle
-        ASSERT(CheckValidHandle(renderpass), "\tInvalid RenderPass handle passed");
+        CHECK_VULKAN_HANDLE(renderpass)
     
         // destroy
         vkDestroyRenderPass(device, renderpass, allocator);
@@ -737,7 +961,7 @@ namespace Vulkan{
      */
     [[nodiscard]] inline VkRenderPass CreateRenderPass(const VkDevice& device, const VkRenderPassCreateInfo& createInfo, const VkAllocationCallbacks* allocator = nullptr){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // renderpass
         VkRenderPass renderpass;
@@ -746,10 +970,10 @@ namespace Vulkan{
         VkResult resCreateRenderPass = vkCreateRenderPass(device, &createInfo, allocator, &renderpass);
 
         // check success
-        ASSERT(resCreateRenderPass == VK_SUCCESS, "\tRenderPass creation failed -> return : %s", ResultString(resCreateRenderPass));
+        ASSERT(resCreateRenderPass == VK_SUCCESS, "RenderPass creation failed -> return : %s", ResultString(resCreateRenderPass));
 
         // print success
-        printf("[CreateRenderPass] : RenderPass creation successful\n");
+        LOG(success, "[CreateRenderPass] : RenderPass creation successful");
 
         // return
         return renderpass;
@@ -764,10 +988,10 @@ namespace Vulkan{
      */
     inline void DestroyFramebuffer(const VkDevice& device, const VkFramebuffer& framebuffer, const VkAllocationCallbacks* allocator = nullptr){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
     
         // check valid framebuffer handle
-        ASSERT(CheckValidHandle(framebuffer), "\tInvalid Framebuffer handle passed");
+        CHECK_VULKAN_HANDLE(framebuffer)
 
         // destroy
         vkDestroyFramebuffer(device, framebuffer, allocator);
@@ -783,7 +1007,7 @@ namespace Vulkan{
      */
     [[nodiscard]] inline VkFramebuffer CreateFramebuffer(const VkDevice& device, const VkFramebufferCreateInfo& framebufferCreateInfo, const VkAllocationCallbacks* allocator = nullptr) noexcept{
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // framebuffer handle
         VkFramebuffer framebuffer;
@@ -792,10 +1016,10 @@ namespace Vulkan{
         VkResult resCreateFramebuffer = vkCreateFramebuffer(device, &framebufferCreateInfo, allocator, &framebuffer);
 
         // check success
-        ASSERT(resCreateFramebuffer == VK_SUCCESS, "\tFramebuffer creation failed -> returned : %s", ResultString(resCreateFramebuffer));
+        ASSERT(resCreateFramebuffer == VK_SUCCESS, "Framebuffer creation failed -> returned : %s", ResultString(resCreateFramebuffer));
 
         // print success
-        printf("[CreateFramebuffer] : Framebuffer creation successful\n");
+        LOG(success, "[CreateFramebuffer] : Framebuffer creation successful");
 
         // return
         return framebuffer;
@@ -810,10 +1034,10 @@ namespace Vulkan{
      */
     inline void DestroyFence(const VkDevice& device, const VkFence& fence, const VkAllocationCallbacks* allocator = nullptr){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed"); 
+        CHECK_VULKAN_HANDLE(device)
 
         // check valid fence handle
-        ASSERT(CheckValidHandle(fence), "\tInvalid Fence handle passed");
+        CHECK_VULKAN_HANDLE(fence)
 
         // destroy 
         vkDestroyFence(device, fence, allocator);
@@ -829,7 +1053,7 @@ namespace Vulkan{
      */
     [[nodiscard]] inline VkFence CreateFence(const VkDevice& device, const VkFenceCreateInfo& fenceCreateInfo, const VkAllocationCallbacks* allocator = nullptr){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed"); 
+        CHECK_VULKAN_HANDLE(device)
 
         // fence
         VkFence fence;
@@ -838,10 +1062,10 @@ namespace Vulkan{
         VkResult resCreateFence = vkCreateFence(device, &fenceCreateInfo, allocator, &fence);
 
         // check success
-        ASSERT(resCreateFence == VK_SUCCESS, "\tFence creation failed -> returned : %s", ResultString(resCreateFence));
+        ASSERT(resCreateFence == VK_SUCCESS, "Fence creation failed -> returned : %s", ResultString(resCreateFence));
 
         // print success
-        printf("[CreateFence] : Fence creation successful\n");
+        LOG(success, "[CreateFence] : Fence creation successful");
 
         // return
         return fence;
@@ -857,13 +1081,13 @@ namespace Vulkan{
      */
     inline void WaitForFences(const VkDevice& device, const std::vector<VkFence>& fences, VkBool32 waitAll, uint64 timeout){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // wait
         VkResult resWaitFences = vkWaitForFences(device, fences.size(), fences.data(), waitAll, timeout);
 
         // check success
-        ASSERT(resWaitFences == VK_SUCCESS, "\tSomething wrong happened while waiting for Fence(s) -> returned %s", ResultString(resWaitFences));
+        ASSERT(resWaitFences == VK_SUCCESS, "Something wrong happened while waiting for Fence(s) -> returned %s", ResultString(resWaitFences));
     }
 
     /**
@@ -875,13 +1099,13 @@ namespace Vulkan{
      */
     inline void WaitForFence(const VkDevice& device, const VkFence& fence, const uint64& timeout){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // wait
         VkResult resWaitFence = vkWaitForFences(device, 1, &fence, VK_TRUE, timeout);
 
         // check success
-        ASSERT(resWaitFence == VK_SUCCESS, "\tSomething wrong happened while waiting for a Fence -> returned %s", ResultString(resWaitFence));
+        ASSERT(resWaitFence == VK_SUCCESS, "Something wrong happened while waiting for a Fence -> returned %s", ResultString(resWaitFence));
     }
 
     /**
@@ -892,13 +1116,13 @@ namespace Vulkan{
      */
     inline void ResetFences(const VkDevice& device, const std::vector<VkFence>& fences){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // reset
         VkResult resResetFences = vkResetFences(device, fences.size(), fences.data());
 
         // check success
-        ASSERT(resResetFences == VK_SUCCESS, "\tReset Fence(s) failed -> returned : %s", ResultString(resResetFences));
+        ASSERT(resResetFences == VK_SUCCESS, "Reset Fence(s) failed -> returned : %s", ResultString(resResetFences));
     }
 
     /**
@@ -909,13 +1133,13 @@ namespace Vulkan{
      */
     inline void ResetFence(const VkDevice& device, const VkFence& fence){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // reset
         VkResult resResetFence = vkResetFences(device, 1, &fence);
 
         // check success
-        ASSERT(resResetFence == VK_SUCCESS, "\tReset Fence failed -> returned : %s", ResultString(resResetFence));
+        ASSERT(resResetFence == VK_SUCCESS, "Reset Fence failed -> returned : %s", ResultString(resResetFence));
     }
 
     /**
@@ -927,10 +1151,10 @@ namespace Vulkan{
      */
     inline void DestroySemaphore(const VkDevice& device, const VkSemaphore& semaphore, const VkAllocationCallbacks* allocator = nullptr){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed"); 
+        CHECK_VULKAN_HANDLE(device)
 
         // check valid fence handle
-        ASSERT(CheckValidHandle(semaphore), "\tInvalid Semaphore handle passed");
+        CHECK_VULKAN_HANDLE(semaphore)
 
         // destroy 
         vkDestroySemaphore(device, semaphore, allocator);
@@ -946,7 +1170,7 @@ namespace Vulkan{
      */
     [[nodiscard]] inline VkSemaphore CreateSemaphore(const VkDevice& device, const VkSemaphoreCreateInfo& semaphoreCreateInfo, const VkAllocationCallbacks* allocator = nullptr){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed"); 
+        CHECK_VULKAN_HANDLE(device)
 
         // fence
         VkSemaphore semaphore;
@@ -955,10 +1179,10 @@ namespace Vulkan{
         VkResult resCreateSemaphore = vkCreateSemaphore(device, &semaphoreCreateInfo, allocator, &semaphore);
 
         // check success
-        ASSERT(resCreateSemaphore == VK_SUCCESS, "\tSemaphore creation failed -> returned : %s", ResultString(resCreateSemaphore));
+        ASSERT(resCreateSemaphore == VK_SUCCESS, "Semaphore creation failed -> returned : %s", ResultString(resCreateSemaphore));
 
         // print success
-        printf("[CreateSemaphore] : Semaphore creation successful\n");
+        LOG(success, "[CreateSemaphore] : Semaphore creation successful");
 
         // return
         return semaphore;
@@ -966,14 +1190,10 @@ namespace Vulkan{
 
     [[nodiscard]] inline uint32 AcquireNextImage(const VkDevice& device, const VkSwapchainKHR& swapchain, const uint64& timeout, const VkSemaphore& semaphore, const VkFence& fence){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed"); 
+        CHECK_VULKAN_HANDLE(device)
 
-        // check valid device handle
-        ASSERT(CheckValidHandle(swapchain), "\tInvalid Swapchain handle passed"); 
-
-        // check that semaphore and fence are not invalid at same time
-        ASSERT(CheckValidHandle(semaphore) || CheckValidHandle(fence), 
-            "\tBoth semaphore and fence must not be NULL handle at the same time");
+        // check valid swapchain handle
+        CHECK_VULKAN_HANDLE(swapchain)
 
         // image index
         uint32 idx;
@@ -982,7 +1202,7 @@ namespace Vulkan{
         VkResult resAcquireNextImage = vkAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, &idx);
 
         // check success
-        ASSERT(resAcquireNextImage == VK_SUCCESS, "\tFailed to acquire next image index -> returned : %s", ResultString(resAcquireNextImage));
+        ASSERT(resAcquireNextImage == VK_SUCCESS, "Failed to acquire next image index -> returned : %s", ResultString(resAcquireNextImage));
 
         // return index
         return idx;
@@ -996,13 +1216,13 @@ namespace Vulkan{
      */
     inline void ResetCommandBuffer(const VkCommandBuffer& cmdBuffer, const VkCommandBufferResetFlags& flags){
         // check valid command buffer handle
-        ASSERT(CheckValidHandle(cmdBuffer), "\tInvalid Command Buffer handle passed");
+        CHECK_VULKAN_HANDLE(cmdBuffer)
 
         // reset
         VkResult resResetCommandBuffer = vkResetCommandBuffer(cmdBuffer, flags);
 
         // check success
-        ASSERT(resResetCommandBuffer == VK_SUCCESS, "\tReset Command Buffer failed -> returned : %s", ResultString(resResetCommandBuffer));
+        ASSERT(resResetCommandBuffer == VK_SUCCESS, "Reset Command Buffer failed -> returned : %s", ResultString(resResetCommandBuffer));
     }
 
     /**
@@ -1013,13 +1233,13 @@ namespace Vulkan{
      */
     inline void BeginCommandBuffer(const VkCommandBuffer& cmdBuffer, const VkCommandBufferBeginInfo& beginInfo){
         // check valid command buffer handle
-        ASSERT(CheckValidHandle(cmdBuffer), "\tInvalid Command Buffer handle passed");
+        CHECK_VULKAN_HANDLE(cmdBuffer)
 
         // begin
         VkResult resBeginCommandBuffer = vkBeginCommandBuffer(cmdBuffer, &beginInfo);
 
         // check success
-        ASSERT(resBeginCommandBuffer == VK_SUCCESS, "\tFailed to begin Command Buffer recording -> returned : %s", ResultString(resBeginCommandBuffer));
+        ASSERT(resBeginCommandBuffer == VK_SUCCESS, "Failed to begin Command Buffer recording -> returned : %s", ResultString(resBeginCommandBuffer));
     }
 
     /**
@@ -1029,13 +1249,13 @@ namespace Vulkan{
      */
     inline void EndCommandBuffer(const VkCommandBuffer& cmdBuffer){
         // check valid command buffer handle
-        ASSERT(CheckValidHandle(cmdBuffer), "\tInvalid Command Buffer handle passed");
+        CHECK_VULKAN_HANDLE(cmdBuffer)
 
         // begin
         VkResult resEndCommandBuffer = vkEndCommandBuffer(cmdBuffer);
 
         // check success
-        ASSERT(resEndCommandBuffer == VK_SUCCESS, "\tFailed to end Command Buffer recording -> returned : %s", ResultString(resEndCommandBuffer));
+        ASSERT(resEndCommandBuffer == VK_SUCCESS, "Failed to end Command Buffer recording -> returned : %s", ResultString(resEndCommandBuffer));
     }
 
     /**
@@ -1049,7 +1269,7 @@ namespace Vulkan{
      */
     inline void CmdBindVertexBuffers(const VkCommandBuffer& cmdBuffer, const uint32& firstBinding, const uint32& bindingCount, const std::vector<VkBuffer>& buffers, const std::vector<VkDeviceSize>& offsets){
         // check valid command buffer handle
-        ASSERT(CheckValidHandle(cmdBuffer), "\tInvalid Command Buffer handle passed");
+        CHECK_VULKAN_HANDLE(cmdBuffer)
 
         // bind
         vkCmdBindVertexBuffers(cmdBuffer, firstBinding, bindingCount, buffers.data(), offsets.data());
@@ -1067,7 +1287,7 @@ namespace Vulkan{
      */
     inline void CmdPushConstants(const VkCommandBuffer& cmdBuffer, const VkPipelineLayout& pipelineLayout, const VkShaderStageFlags& stageFlags, const uint32_t& offset, const uint32_t& size, const void *pValues){
         // check valid command buffer handle
-        ASSERT(CheckValidHandle(cmdBuffer), "\tInvalid Command Buffer handle passed");
+        CHECK_VULKAN_HANDLE(cmdBuffer)
 
         // push
         vkCmdPushConstants(cmdBuffer, pipelineLayout, stageFlags, offset, size, pValues);
@@ -1082,13 +1302,13 @@ namespace Vulkan{
      */
     inline void QueueSumbit(const VkQueue& queue, const std::vector<VkSubmitInfo>& submitInfos, const VkFence& fence){
         // check valid queue handle
-        ASSERT(CheckValidHandle(queue), "\tInvalid Queue handle passed");
+        CHECK_VULKAN_HANDLE(queue)
 
         // submit
         VkResult resQueueSubmit = vkQueueSubmit(queue, submitInfos.size(), submitInfos.data(), fence);
 
         // check success
-        ASSERT(resQueueSubmit == VK_SUCCESS, "\tQueue submit failed -> returned : %s", ResultString(resQueueSubmit));
+        ASSERT(resQueueSubmit == VK_SUCCESS, "Queue submit failed -> returned : %s", ResultString(resQueueSubmit));
     }
 
     /**
@@ -1100,7 +1320,7 @@ namespace Vulkan{
      */
     inline void CmdBeginRenderPass(const VkCommandBuffer& cmdBuffer, const VkRenderPassBeginInfo& renderPassBeginInfo, const VkSubpassContents& subpassContents){
         // check valid command buffer handle
-        ASSERT(CheckValidHandle(cmdBuffer), "\tInvalid Command Buffer handle passed");
+        CHECK_VULKAN_HANDLE(cmdBuffer)
 
         // begin
         vkCmdBeginRenderPass(cmdBuffer, &renderPassBeginInfo, subpassContents);
@@ -1113,7 +1333,7 @@ namespace Vulkan{
      */
     inline void CmdEndRenderPass(const VkCommandBuffer& cmdBuffer){
         // check valid command buffer handle
-        ASSERT(CheckValidHandle(cmdBuffer), "\tInvalid Command Buffer handle passed");
+        CHECK_VULKAN_HANDLE(cmdBuffer)
 
         // begin
         vkCmdEndRenderPass(cmdBuffer);
@@ -1128,7 +1348,7 @@ namespace Vulkan{
      */
     inline void CmdBindPipeline(const VkCommandBuffer& cmdBuffer, const VkPipelineBindPoint& bindPoint, const VkPipeline& pipeline){
         // check valid command buffer handle
-        ASSERT(CheckValidHandle(cmdBuffer), "\tInvalid Command Buffer handle passed");
+        CHECK_VULKAN_HANDLE(cmdBuffer)
     
         // bind
         vkCmdBindPipeline(cmdBuffer, bindPoint, pipeline);
@@ -1145,7 +1365,7 @@ namespace Vulkan{
      */
     inline void CmdDraw(const VkCommandBuffer& cmdBuffer, const uint32& vertexCount, const uint32& instanceCount, const uint32& firstVertex, const uint32 firstInstance){
         // check valid command buffer handle
-        ASSERT(CheckValidHandle(cmdBuffer), "\tInvalid Command Buffer handle passed");
+        CHECK_VULKAN_HANDLE(cmdBuffer)
 
         // draw
         vkCmdDraw(cmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
@@ -1158,13 +1378,13 @@ namespace Vulkan{
      */
     inline void DeviceWaitIdle(const VkDevice& device){
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
     
         // wait
         VkResult resDeviceWaitIdle = vkDeviceWaitIdle(device);
 
         // check success
-        ASSERT(resDeviceWaitIdle == VK_SUCCESS, "\tDevice waid idle failed -> returned : %s", ResultString(resDeviceWaitIdle));
+        ASSERT(resDeviceWaitIdle == VK_SUCCESS, "Device waid idle failed -> returned : %s", ResultString(resDeviceWaitIdle));
     }
 
     /**
@@ -1174,11 +1394,67 @@ namespace Vulkan{
      */
     inline void CmdBeginRenderPass(const VkCommandBuffer& cmdBuffer){
         // check valid command buffer handle
-        ASSERT(CheckValidHandle(cmdBuffer), "\tInvalid Command Buffer handle passed");
+        CHECK_VULKAN_HANDLE(cmdBuffer)
 
         // end
         vkCmdEndRenderPass(cmdBuffer);
     }
+
+    /**
+     * @brief Create a Descriptor Set Layout
+     * 
+     * @param device 
+     * @param createInfo 
+     * @param pAllocator 
+     * @return VkDescriptorSetLayout 
+     */
+    inline VkDescriptorSetLayout CreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& createInfo, const VkAllocationCallbacks *pAllocator = nullptr){
+        // check valid device handle
+        CHECK_VULKAN_HANDLE(device)
+
+        // set layout
+        VkDescriptorSetLayout layout;
+
+        // create
+        VkResult resCreateDescriptorSetLayout = vkCreateDescriptorSetLayout(device, &createInfo, pAllocator, &layout);
+    
+        // check success
+        ASSERT(resCreateDescriptorSetLayout == VK_SUCCESS, "Descriptor Set Layout creation failed -> returned : %s", ResultString(resCreateDescriptorSetLayout));
+    
+        // print success
+        LOG(success, "[CreateDescriptorSetLayout] : Descriptor Set Layout creation successful");
+
+        // return
+        return layout;
+    }
+
+     /**
+     * @brief Create a Descriptor Pool
+     * 
+     * @param device 
+     * @param createInfo 
+     * @param pAllocator 
+     * @return VkDescriptorSetLayout 
+     */
+    inline VkDescriptorPool CreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo& createInfo, const VkAllocationCallbacks *pAllocator = nullptr){
+        // check valid device handle
+        CHECK_VULKAN_HANDLE(device)
+
+        VkDescriptorPool pool;
+
+        // create
+        VkResult resCreateDescriptorPool = vkCreateDescriptorPool(device, &createInfo, pAllocator, &pool);
+    
+        // check success
+        ASSERT(resCreateDescriptorPool == VK_SUCCESS, "Descriptor Pool creation failed -> returned : %s", ResultString(resCreateDescriptorPool));
+    
+        // print success
+        LOG(success, "[CreateDescriptorPool] : Descriptor Pool creation successful");
+
+        // return
+        return pool;
+    }
+
 
     /**
      * @brief submit to present queue
@@ -1188,13 +1464,13 @@ namespace Vulkan{
      */
     inline void QueuePresent(const VkQueue& queue, const VkPresentInfoKHR& presentInfo){
         // check valid queue handle
-        ASSERT(CheckValidHandle(queue), "\tInvalid Queue handle passed");
+        CHECK_VULKAN_HANDLE(queue)
 
         // present
         VkResult resQueuePresent = vkQueuePresentKHR(queue, &presentInfo);
 
         // check success
-        ASSERT(resQueuePresent == VK_SUCCESS, "\tQueue present failed -> returned : %s", ResultString(resQueuePresent));
+        ASSERT(resQueuePresent == VK_SUCCESS, "Queue present failed -> returned : %s", ResultString(resQueuePresent));
     }
 
     /**
@@ -1204,15 +1480,15 @@ namespace Vulkan{
      * @param shader 
      * @param allocator
      */
-    inline void DestroyShaderModule(const VkDevice& device, const VkShaderModule& shader, const VkAllocationCallbacks* allocator = nullptr) noexcept{
+    inline void DestroyShaderModule(const VkDevice& device, const VkShaderModule& shaderModule, const VkAllocationCallbacks* allocator = nullptr) noexcept{
         // check valid device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // check valid shader handle
-        ASSERT(CheckValidHandle(shader), "\tInvalid Shader Module handle passed");
+        CHECK_VULKAN_HANDLE(shaderModule)
 
         // destroy
-        vkDestroyShaderModule(device, shader, allocator);
+        vkDestroyShaderModule(device, shaderModule, allocator);
     }
 
     /**
@@ -1224,15 +1500,18 @@ namespace Vulkan{
      * @return VkShaderModule created shader module
      */
     [[nodiscard]] inline VkShaderModule CreateShaderModule(const VkDevice& device, const VkShaderModuleCreateInfo& smCreateInfo, const VkAllocationCallbacks* allocator = nullptr) noexcept{
+        // check device handle
+        CHECK_VULKAN_HANDLE(device)
+
         // shader module handle
         VkShaderModule shader;
 
         // create and check
         VkResult resCreateShaderModule = vkCreateShaderModule(device, &smCreateInfo, allocator, &shader);
-        ASSERT(resCreateShaderModule == VK_SUCCESS, "\tFailed to create Shader Module -> returned : %s", ResultString(resCreateShaderModule));
+        ASSERT(resCreateShaderModule == VK_SUCCESS, "Failed to create Shader Module -> returned : %s", ResultString(resCreateShaderModule));
 
         // print success
-        printf("[CreateShaderModule] : Shader Module creation successful\n");
+        LOG(success, "[CreateShaderModule] : Shader Module creation successful");
 
         return shader;
     }
@@ -1244,15 +1523,114 @@ namespace Vulkan{
      * @param layout 
      * @param allocator
      */
-    inline void DestroyPipelineLayout(const VkDevice& device, const VkPipelineLayout& layout, const VkAllocationCallbacks* allocator = nullptr) noexcept{
+    inline void DestroyPipelineLayout(const VkDevice& device, const VkPipelineLayout& pipelineLayout, const VkAllocationCallbacks* allocator = nullptr) noexcept{
         // check device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // check pipeline layout handle
-        ASSERT(CheckValidHandle(layout), "\tInvalid Pipeline Layou handle passed");
+        CHECK_VULKAN_HANDLE(pipelineLayout)
     
         // destroy
-        vkDestroyPipelineLayout(device, layout, allocator);
+        vkDestroyPipelineLayout(device, pipelineLayout, allocator);
+    }
+
+    /**
+     * @brief allocate descriptor sets
+     * 
+     * @param device 
+     * @param allocateInfo 
+     * @return std::vector<VkDescriptorSet> 
+     */
+    [[nodiscard]] inline std::vector<VkDescriptorSet> AllocateDescriptorSets(const VkDevice& device, const VkDescriptorSetAllocateInfo& allocateInfo){
+        // check device handle
+        CHECK_VULKAN_HANDLE(device)
+
+        // descriptor sets
+        std::vector<VkDescriptorSet> sets(allocateInfo.descriptorSetCount);
+
+        // allocate
+        VkResult resAllocateDescriptorSets = vkAllocateDescriptorSets(device, &allocateInfo, sets.data());
+
+        // check success
+        ASSERT(resAllocateDescriptorSets == VK_SUCCESS, "Descriptor Set allocation failed -> returned : %s", ResultString(resAllocateDescriptorSets));
+
+        // print success
+        LOG(success, "[AllocateDescriptorSets] : Succesfully allocated %i Descriptor Sets", static_cast<uint32>(sets.size()));
+
+        // return
+        return sets;
+    }
+
+    /**
+     * @brief update descriptor sets
+     * 
+     * @param device 
+     * @param descriptorWrites 
+     * @param descriptorCopies 
+     */
+    inline void UpdateDescriptorSets(const VkDevice& device, const std::vector<VkWriteDescriptorSet>& descriptorWrites, const std::vector<VkCopyDescriptorSet>& descriptorCopies = std::vector<VkCopyDescriptorSet>(0)){
+        // check device handle
+        CHECK_VULKAN_HANDLE(device)
+
+        // update
+        vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), descriptorCopies.size(), descriptorCopies.data());
+    }
+
+    /**
+     * @brief bind descriptor sets
+     * 
+     * @param commandBuffer 
+     * @param pipelineBindPoint 
+     * @param layout 
+     * @param firstSet 
+     * @param descriptorSets 
+     * @param dynamicOffsets 
+     */
+    inline void CmdBindDescriptorSets(const VkCommandBuffer& commandBuffer, const VkPipelineBindPoint& pipelineBindPoint, const VkPipelineLayout& pipelineLayout, const uint32& firstSet, const std::vector<VkDescriptorSet>& descriptorSets, const std::vector<uint32>& dynamicOffsets = std::vector<uint32>(0)){
+        // check valid command buffer handle
+        CHECK_VULKAN_HANDLE(commandBuffer)
+    
+        // check pipeline layout
+        CHECK_VULKAN_HANDLE(pipelineLayout)
+
+        // bind sets
+        vkCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, pipelineLayout, firstSet, descriptorSets.size(), descriptorSets.data(), dynamicOffsets.size(), dynamicOffsets.data());
+    }
+
+    /**
+     * @brief destroy descriptor pool
+     * 
+     * @param device 
+     * @param descriptorPool 
+     * @param allocator 
+     */
+    inline void DestroyDescriptorPool(const VkDevice& device, const VkDescriptorPool& descriptorPool, const VkAllocationCallbacks *allocator = nullptr){
+        // check device handle
+        CHECK_VULKAN_HANDLE(device)
+        
+        // descriptor pool
+        CHECK_VULKAN_HANDLE(descriptorPool)
+
+        // destroy
+        vkDestroyDescriptorPool(device, descriptorPool, allocator);
+    }
+
+    /**
+     * @brief destroy descriptor set layout
+     * 
+     * @param device 
+     * @param descriptorSetLayout 
+     * @param allocator 
+     */
+    inline void DestroyDescriptorSetLayout(const VkDevice& device, const VkDescriptorSetLayout& descriptorSetLayout, const VkAllocationCallbacks *allocator = nullptr){
+        // check device handle
+        CHECK_VULKAN_HANDLE(device)
+
+        // check set layout handle
+        CHECK_VULKAN_HANDLE(descriptorSetLayout)
+    
+        // destroy
+        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, allocator);
     }
 
     /**
@@ -1265,7 +1643,7 @@ namespace Vulkan{
      */
     [[nodiscard]] inline VkPipelineLayout CreatePipelineLayout(const VkDevice& device, const VkPipelineLayoutCreateInfo& pipelineLayoutInfo, const VkAllocationCallbacks* allocator = nullptr) noexcept{
         // check device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // pipeline layout
         VkPipelineLayout layout;
@@ -1274,10 +1652,10 @@ namespace Vulkan{
         VkResult resCreatePipelineLayout = vkCreatePipelineLayout(device, &pipelineLayoutInfo, allocator, &layout);
 
         // check success
-        ASSERT(resCreatePipelineLayout == VK_SUCCESS, "\tPipeline Layout creation failed -> returned %s", ResultString(resCreatePipelineLayout));
+        ASSERT(resCreatePipelineLayout == VK_SUCCESS, "Pipeline Layout creation failed -> returned %s", ResultString(resCreatePipelineLayout));
 
         // print success
-        printf("[CreatePipelineLayout] : Pipeline Layout creation successful\n");
+        LOG(success, "[CreatePipelineLayout] : Pipeline Layout creation successful");
 
         // return 
         return layout;
@@ -1292,10 +1670,10 @@ namespace Vulkan{
      */
     inline void DestroyPipeline(const VkDevice& device, const VkPipeline& pipeline, const VkAllocationCallbacks* allocator = nullptr) noexcept{
         // check device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // check pipeline handle
-        ASSERT(CheckValidHandle(pipeline), "\tInvalid Pipeline handle passed");
+        CHECK_VULKAN_HANDLE(pipeline)
 
         // destroy
         vkDestroyPipeline(device, pipeline, allocator);
@@ -1312,7 +1690,7 @@ namespace Vulkan{
      */
     [[nodiscard]] inline std::vector<VkPipeline> CreateGraphicsPipelines(const VkDevice& device, const VkPipelineCache& pipelineCache, const std::vector<VkGraphicsPipelineCreateInfo>& createInfos, const VkAllocationCallbacks* allocator = nullptr){
         // check device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // pipelines vector with same size as that of create infos
         std::vector<VkPipeline> pipelines(createInfos.size());
@@ -1321,10 +1699,10 @@ namespace Vulkan{
         VkResult resCreateGraphicsPipelines = vkCreateGraphicsPipelines(device, pipelineCache, createInfos.size(), createInfos.data(), allocator, pipelines.data());
         
         // check success
-        ASSERT(resCreateGraphicsPipelines == VK_SUCCESS, "\tFailed to create graphics pipeline -> returned %s", ResultString(resCreateGraphicsPipelines));
+        ASSERT(resCreateGraphicsPipelines == VK_SUCCESS, "Failed to create graphics pipeline -> returned %s", ResultString(resCreateGraphicsPipelines));
 
         // print success
-        printf("[CreateGraphicsPipelines] : %i Graphics Pipeline(s) created successfully\n", static_cast<uint>(pipelines.size()));
+        LOG(success, "[CreateGraphicsPipelines] : %i Graphics Pipeline(s) created successfully", static_cast<uint>(pipelines.size()));
 
         // return
         return pipelines;
@@ -1341,7 +1719,7 @@ namespace Vulkan{
      */
     [[nodiscard]] inline VkPipeline CreateGraphicsPipeline(const VkDevice& device, const VkPipelineCache& pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo, const VkAllocationCallbacks* allocator = nullptr){
         // check device handle
-        ASSERT(CheckValidHandle(device), "\tInvalid Logical Device handle passed");
+        CHECK_VULKAN_HANDLE(device)
 
         // pipelines vector with same size as that of create infos
         VkPipeline pipeline;
@@ -1350,10 +1728,10 @@ namespace Vulkan{
         VkResult resCreateGraphicsPipeline = vkCreateGraphicsPipelines(device, pipelineCache, 1, &createInfo, allocator, &pipeline);
         
         // check success
-        ASSERT(resCreateGraphicsPipeline == VK_SUCCESS, "\tFailed to create graphics pipeline -> returned %s", ResultString(resCreateGraphicsPipeline));
+        ASSERT(resCreateGraphicsPipeline == VK_SUCCESS, "Failed to create graphics pipeline -> returned %s", ResultString(resCreateGraphicsPipeline));
 
         // print success
-        printf("[CreateGraphicsPipeline] : Graphics Pipeline created successfully\n");
+        LOG(success, "[CreateGraphicsPipeline] : Graphics Pipeline created successfully");
 
         // return
         return pipeline;

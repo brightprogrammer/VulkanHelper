@@ -1,12 +1,13 @@
 /**
  * @file VulkanInitializers.hpp
  * @author Siddharth Mishra (bshock665@gmail.com)
- * @brief Contains functions that can be used to easily initialize Vulkan structs.
+ * @brief 
  * @version 0.1
- * @date 2021-04-06
+ * @date 2021-04-15
+ * 
  */
 
- /**
+  /**
   * @copyright Copyright 2021 Siddharth Mishra
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,8 +24,8 @@
   * 
   */
 
-#ifndef INITIALIZERS_HPP
-#define INITIALIZERS_HPP
+#ifndef VULKAN_HELPER_INITIALIZERS_HPP
+#define VULKAN_HELPER_INITIALIZERS_HPP
 
 #include <SDL2/SDL_video.h>
 #include <vector>
@@ -130,7 +131,7 @@ namespace Vulkan{
         * @return VkSwapchainCreateInfoKHR 
         */
         [[nodiscard]] inline VkSwapchainCreateInfoKHR SwapchainCreateInfo(const VkPhysicalDevice& physicalDevice, 
-            const VkSurfaceKHR& surface, SDL_Window* window) noexcept{
+            const VkSurfaceKHR& surface, Window& window) noexcept{
             // get surface information required for swapchain creation
             auto surfacePresentModes = Vulkan::GetPhysicalDeviceSurfacePresentModes(physicalDevice, surface);
             auto surfaceCapabilities = Vulkan::GetPhysicalDeviceSurfaceCapabilities(physicalDevice, surface);
@@ -142,7 +143,7 @@ namespace Vulkan{
             auto surfacePresentMode      = Vulkan::Tools::SelectSwapchainSurfacePresentMode(surfacePresentModes);
             
             // store image extent
-            auto swapchainImageExtent    = Vulkan::Tools::SelectSwapchainSurfaceImageExtent(window, surfaceCapabilities);
+            auto swapchainImageExtent    = Vulkan::Tools::SelectSwapchainSurfaceImageExtent(window.GetHandle(), surfaceCapabilities);
             
             // it is recommended to set minimum image count one more than given min count
             uint32 imageCount   = surfaceCapabilities.minImageCount + 1;
@@ -169,25 +170,19 @@ namespace Vulkan{
             swapchainCreateInfo.imageArrayLayers    = 1;
             
             // get queue indices
-            auto graphicsQueueIdx = Tools::GetPhysicalDeviceQueueFamilyIndex(physicalDevice, VK_QUEUE_GRAPHICS_BIT);
-            auto presentQueueIdx  = Tools::GetPhysicalDeviceSurfaceSupportQueueIndex(physicalDevice, surface);
+            auto graphicsQueueIdx = GetPhysicalDeviceQueueFamilyIndex(physicalDevice, VK_QUEUE_GRAPHICS_BIT);
+            auto presentQueueIdx  = GetPhysicalDeviceSurfaceSupportQueueIndex(physicalDevice, surface);
 
             // check whehter the image will be used by multiple queues or not
-            // if it will be used then we will need to set the different queue indices
-            ASSERT(graphicsQueueIdx >= 0 && presentQueueIdx >= 0, "\tSelected physical Device does not provide/support required queue families");
-            uint32 queueFamilyIndices[] = {
-                static_cast<uint32>(graphicsQueueIdx), 
-                static_cast<uint32>(presentQueueIdx)
-            };
+            uint32 queueFamilyIndices[] = {graphicsQueueIdx.value(), presentQueueIdx.value()};
             
-
             // if it is to be used in different queus then
             // set to concurrent mode (many access at once (slow))
             // else set to exclusive mode (single access at a time (fast))
             //
             // note that vulkan believes you so, it wont be doing any checks at runtime
             // you might end up crashing program if you abuse these asked parameters
-            if(graphicsQueueIdx != presentQueueIdx){
+            if(graphicsQueueIdx.value() != presentQueueIdx.value()){
                 swapchainCreateInfo.imageSharingMode        = VK_SHARING_MODE_CONCURRENT;
                 swapchainCreateInfo.queueFamilyIndexCount   = 2;
                 swapchainCreateInfo.pQueueFamilyIndices     = queueFamilyIndices;
@@ -251,12 +246,12 @@ namespace Vulkan{
          * @param queueFamilyIdx that the command buffer will submit commands to
          * @return VkCommandPoolCreateInfo 
          */
-        [[nodiscard]] inline VkCommandPoolCreateInfo CommandPoolCreateInfo(uint32 queueFamilyIdx){
+        [[nodiscard]] inline VkCommandPoolCreateInfo CommandPoolCreateInfo(uint32 queueFamilyIdx, const VkCommandPoolCreateFlags& createFlag){
             // initialize
             VkCommandPoolCreateInfo commandPoolInfo = {};
             commandPoolInfo.sType               = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
             // reset means that command buffers allocated from this pool must be able to reset anytime
-            commandPoolInfo.flags               = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            commandPoolInfo.flags               = createFlag;
             // queue family index that the command buffers allocated from this pool will submit commands to
             // this way command pool allocates command buffers that are able to submit commands to
             // any queue of that graphics family
@@ -735,17 +730,54 @@ namespace Vulkan{
          * @brief buffer create info initializer
          * 
          * @param size of memory to allocate for buffer
+         * @param usageFlags is how do you want to use this buffer?
          * @return VkBufferCreateInfo 
          */
-        [[nodiscard]] inline VkBufferCreateInfo BufferCreateInfo(const uint32 size){
+        [[nodiscard]] inline VkBufferCreateInfo BufferCreateInfo(const uint32 size, const VkBufferUsageFlags& usageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT){
             // initialize
             VkBufferCreateInfo bufferCreateInfo = {};
             bufferCreateInfo.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
             bufferCreateInfo.size               = size;
-            bufferCreateInfo.usage              = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            bufferCreateInfo.usage              = usageFlags;
 
             // return
             return bufferCreateInfo;
+        }
+
+        /**
+         * @brief descriptor set layout create info
+         * 
+         * @param bindings 
+         * @return VkDescriptorSetLayoutCreateInfo 
+         */
+        [[nodiscard]] inline VkDescriptorSetLayoutCreateInfo DescriptorSetLayoutCreateInfo(const std::vector<VkDescriptorSetLayoutBinding>& bindings){
+            // initialize
+            VkDescriptorSetLayoutCreateInfo setInfo = {};
+            setInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            setInfo.flags = 0; // no flags;
+            setInfo.bindingCount = static_cast<uint32>(bindings.size());
+            setInfo.pBindings = bindings.data();
+
+            // return
+            return setInfo;
+        }
+
+        /**
+         * @brief VkDescriptorPoolCreateInfo initializer
+         * 
+         * @param poolSizes 
+         * @return VkDescriptorPoolCreateInfo 
+         */
+        [[nodiscard]] inline VkDescriptorPoolCreateInfo DescriptorPoolCreateInfo(const std::vector<VkDescriptorPoolSize>& poolSizes){
+            // initialize
+            VkDescriptorPoolCreateInfo createInfo = {};
+            createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+            createInfo.pPoolSizes = poolSizes.data();
+            createInfo.poolSizeCount = static_cast<uint32>(poolSizes.size());
+            createInfo.maxSets = 10;
+
+            // return
+            return createInfo;
         }
 
         /**

@@ -69,7 +69,7 @@ void Renderer::CreateSurface(){
 ```c++
 // select physical device
 void Renderer::SelectPhysicalDevice(){
-    physicalDevice = Vulkan::Tools::SelectBestPhysicalDevice(instance, surface);
+    physicalDevice = Vulkan::SelectBestPhysicalDevice(instance, surface);
 }
 ```
 
@@ -147,6 +147,22 @@ Vulkan::CmdEndRenderPass(cmd, ...);
 //end command buffer recording
 Vulkan::EndCommandBuffer(cmd);
 ```
+
+Functions that take an array of objects in C API take a `std::vector` in **VulkanHelper** API  
+For example while updating descriptor sets
+```c++
+// descriptor writes
+VkWriteDescriptorSet writeToSet = {};
+.
+.
+.
+// make a vector
+std::vector<VkWriteDescriptorSet> descriptorWrites = {writeToSet}; // one write
+std::vector<VkCopyDescriptorSet> descriptorCopies = {}; // no copies
+Vulkan::UpdateDescriptorSets(device, descriptorWrites, descriptorCopies); // update
+```
+In the above function the the third parameter is defaulted to empty vector but just to  
+improve code readability, make a descriptorCopies vector and pass it as parameter.
 
 ### CONTRIBUTING
 Any type of contribution is appreciated. Do take a look at the code commenting style and other stuff to keep the as readable as possible.

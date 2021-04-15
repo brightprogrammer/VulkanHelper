@@ -1,12 +1,13 @@
 /**
  * @file VulkanTools.hpp
  * @author Siddharth Mishra (bshock665@gmail.com)
- * @brief Contains functions that help in selecting Vulkan "things" or act as tools.
+ * @brief 
  * @version 0.1
- * @date 2021-04-08
+ * @date 2021-04-15
+ * 
  */
 
- /**
+  /**
   * @copyright Copyright 2021 Siddharth Mishra
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,9 +24,8 @@
   * 
   */
 
-
-#ifndef VULKAN_TOOLS_HPP
-#define VULKAN_TOOLS_HPP
+#ifndef VULKAN_HELPER_VULKAN_TOOLS_HPP
+#define VULKAN_HELPER_VULKAN_TOOLS_HPP
 
 #include "Core.hpp"
 #include <vulkan/vulkan.h>
@@ -37,143 +37,7 @@
 namespace Vulkan{
     
     // contains functions that help in selection, reading etc
-        namespace Tools{
-
-        /**
-        * @brief get the list of surface extension names that are available on
-        *        host platform
-        * 
-        * @return Names : vector of const char* containing surfaces extension names
-        */
-        [[nodiscard]] inline Names GetSurfaceExtensions(){
-            // names of extensions that will be returned
-            Names extensions;
-            // names of all extensions
-            Names availableExtensions = EnumerateInstanceExtensionNames();
-            // names of platform specifc surface extensions
-            Names surfaceExtensions{
-                "VK_KHR_surface"        ,        
-                "VK_KHR_xcb_surface"    ,
-                "VK_KHR_xlib_surface"   ,
-                "VK_KHR_wayland_surface",
-                "VK_KHR_win32_surface"  ,
-                "VK_MVK_ios_surface"    ,
-                "VK_MVK_macos_surface"  ,
-                "VK_EXT_metal_surface"  ,
-                "VK_KHR_android_surface"
-            };
-            
-            // this will enable all surface extensions that are available
-            for(const auto extension : surfaceExtensions){
-                if(CheckAvailability(availableExtensions, extension))
-                    extensions.push_back(extension);
-            }
-
-            // return names of available surface extensions
-            return extensions;
-        }
-
-        /**
-        * @brief the default physical device rating system
-        * 
-        * @param physicalDevice handle
-        * @param surface optional surface handle. given surface improves device selection.
-        *        on some platforms future calls on selected physical device may fail if
-        *        if doesn't support surface presentation. It is highly recommended to pass
-        *        a valid surface handle.
-        * @return uint32 :score of this physical device
-        */
-        [[nodiscard]] inline uint32 RatePhysicalDevice(const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface = VK_NULL_HANDLE){
-            // check physical device
-            ASSERT(CheckValidHandle(physicalDevice), "\tInvalid Physical Device handle passed");
-            
-            // device score
-            uint32 score = 0;
-
-            // get physical device information
-            VkPhysicalDeviceProperties properties = GetPhysicalDeviceProperties(physicalDevice);
-            VkPhysicalDeviceMemoryProperties memoryProperties = GetPhysicalDeviceMemoryProperties(physicalDevice);
-            VkPhysicalDeviceFeatures features = GetPhysicalDeviceFeatures(physicalDevice);
-
-            score += properties.limits.maxColorAttachments * 100;
-            score += properties.limits.maxDescriptorSetInputAttachments * 100;
-            score += properties.limits.maxImageDimension2D * 1000;
-            score += properties.limits.maxImageArrayLayers * 10;
-            score += properties.limits.maxViewports * 500;
-
-            score += memoryProperties.memoryHeapCount * 1000;
-
-            if(features.multiViewport == VK_TRUE)
-                score += 500;
-
-            // get queue properties
-            std::vector<VkQueueFamilyProperties> queues = GetPhysicalDeviceQueueFamilyProperties(physicalDevice);
-            
-            // if device doesn't provide graphics queue then set score to 0
-            for(const auto& queue : queues){
-                // since graphics is most important queue
-                if(queue.queueFlags & VK_QUEUE_GRAPHICS_BIT){
-                    score += 100000; // 1L or 100 Th
-                }
-
-                // since compute is less important that graphics
-                if(queue.queueFlags & VK_QUEUE_COMPUTE_BIT){
-                    score += 50000; // 50 Th
-                }
-            }
-
-            // rate physical device based on surface currently bound to VulkanState<id>
-            // if surface is bound to VulkanState before device selection then that means
-            // user wants to show images onto a window
-            // for this we check if device provides a presentation queue for the given surface
-            if(surface != VK_NULL_HANDLE){
-                // if surface is bound to the given VulkanState
-                // then check if device supports surface presentation or not
-                uint i = 0;
-                VkBool32 presentationSupported;
-                for(const auto& queue : queues){
-                    vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentationSupported);
-                    if(presentationSupported) break; else i++;
-                }
-
-                // it may happen that we reached the end and we never got the queue
-                // in that case we have to check it differently
-                if(i+1 == queues.size() && !presentationSupported) score = 0;
-                else score += 110000;
-            }else{
-                printf("WARNING : IT IS RECOMMENDED TO CREATE A SURFACE (if needed) BEFORE DEVICE SELECTION FOR BETTER DEVICE SELECTION\n");
-            }
-
-            // get device extension names
-            Names extensions = EnumerateDeviceExtensionNames(physicalDevice);
-
-            // check if swapchain extension is present or not
-            bool swapchainExtensionAvailable = false;
-            for(const auto& extension : extensions){
-                if(strcmp(extension, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0)
-                    swapchainExtensionAvailable = true;
-            }
-
-            // no swapchain means no multi-image rendering
-            if(!swapchainExtensionAvailable)
-                score = 0;
-
-            // if surface handle is given
-            // then check for availablity of present modes and formats
-            if(surface != VK_NULL_HANDLE){
-                // get surfacepresent modes
-                uint32 count = 0;
-                vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &count, nullptr);
-                if(count == 0) score = 0; // set score 0 if no present modes are available
-
-                // get surface formts
-                count = 0;
-                VkResult res = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &count, nullptr);
-                if(count == 0) score = 0;
-            }
-
-            return score;
-        }
+    namespace Tools{
 
         /**
         * @brief get the physical device that best meets the requirements of vulkan renderer
@@ -184,7 +48,7 @@ namespace Vulkan{
         */
         [[nodiscard]] inline VkPhysicalDevice SelectBestPhysicalDevice(const VkInstance& instance, const VkSurfaceKHR& surface = VK_NULL_HANDLE){
             // check if a physical device has been bound to the VulkanState or not
-            ASSERT(CheckValidHandle(instance),  "\t");
+            CHECK_VULKAN_HANDLE(instance)
 
             // device list
             auto physicalDeviceList = EnumeratePhysicalDevices(instance);
@@ -316,84 +180,6 @@ namespace Vulkan{
             // return
             return shaderCode;
         }
-
-        /**
-        * @brief get queue index of given queue family from list of queue families
-        * 
-        * @param queueFamilyProperties 
-        * @param flag 
-        * @return signed integer ( less than 0 means queue family not found )
-        */
-        [[nodiscard]] inline int GetPhysicalDeviceQueueFamilyIndex(const std::vector<VkQueueFamilyProperties>& queueFamilyProperties, const VkQueueFlagBits& flag){
-            // check for queue index
-            int queueIdx = -1;
-            for(uint32 i = 0; i<queueFamilyProperties.size();  i++){
-                if(queueFamilyProperties[i].queueFlags & flag) queueIdx = i;
-            }
-
-            // return queue index
-            return queueIdx;
-        }
-
-        /**
-        * @brief get queue index of given queue family from list of queue families.
-        *        use the other function if you already have queue properties enumerated.
-        * 
-        * @param queueFamilyProperties 
-        * @param flag 
-        * @return signed integer ( less than 0 means family not found )
-        */
-        [[nodiscard]] inline int GetPhysicalDeviceQueueFamilyIndex(const VkPhysicalDevice& physicalDevice, const VkQueueFlagBits& flag){
-            // check valid physical device handle
-            ASSERT(CheckValidHandle(physicalDevice), "\tInvalid Physical Device handle given");
-
-            // get queue family properties
-            std::vector<VkQueueFamilyProperties> queueFamilyProperties = GetPhysicalDeviceQueueFamilyProperties(physicalDevice);
-            
-            // check for queue index
-            int queueIdx = -1;
-            for(uint32 i = 0; i<queueFamilyProperties.size();  i++){
-                if(queueFamilyProperties[i].queueFlags & flag) queueIdx = i;
-            }
-
-            // return queue index
-            return queueIdx;
-        }
-
-        /**
-        * @brief get queue index of queue family that supports surface presentation
-        * 
-        * @param physicalDevice handle
-        * @param surface handle
-        * @return signed integer ( less than 0 means family not found )
-        */
-        [[nodiscard]] inline int GetPhysicalDeviceSurfaceSupportQueueIndex(const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface){
-            // check valid physical device handle
-            ASSERT(CheckValidHandle(physicalDevice), "\tInvalid Physical Device handle given");
-
-            // check valid surface handle
-            ASSERT(CheckValidHandle(surface), "\tInvalid Surface handle passed");
-
-            // get physical device queues
-            std::vector<VkQueueFamilyProperties> queues = GetPhysicalDeviceQueueFamilyProperties(physicalDevice);
-
-            // presentation queue index
-            int presentationQueueIdx = -1;
-
-            // check which queue supports presentation
-            for(uint i=0; i<queues.size(); i++){
-                VkBool32 presentationSupported;
-                VkResult res = vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice , i, surface, &presentationSupported);
-                if(res != VK_SUCCESS) printf("[GetPhysicalDeviceSurfaceSupportQueueIndex] : %s\n", ResultString(res));
-                if(presentationSupported){
-                    presentationQueueIdx = i;
-                    break;
-                }
-            }
-
-            return presentationQueueIdx;
-        }
-
     
     } // tools namespace
 

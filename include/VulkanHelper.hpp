@@ -23,8 +23,8 @@
   * 
   */
 
-#ifndef VULKAN_HELPER_HEADER
-#define VULKAN_HELPER_HEADER
+#ifndef VULKAN_HELPER_VULKAN_HELPER_HEADER
+#define VULKAN_HELPER_VULKAN_HELPER_HEADER
 
 // core typedefs
 #include "Core.hpp"
