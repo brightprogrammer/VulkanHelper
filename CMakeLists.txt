@@ -15,4 +15,4 @@ set(CMAKE_CXX_EXTENSIONS OFF) # no extensions
 
 # interface library
 add_library(vulkanhelper INTERFACE)
-target_include_directories(vulkanhelper INTERFACE include/)
+target_include_directories(vulkanhelper INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
