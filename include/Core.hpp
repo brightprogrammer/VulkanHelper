@@ -30,6 +30,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <cinttypes>
 
 // convinience typedefs
 typedef unsigned int uint;
