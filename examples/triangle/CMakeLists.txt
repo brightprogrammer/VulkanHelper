@@ -1,0 +1,2 @@
+add_executable(triangle Renderer.cpp)
+target_link_libraries(triangle vulkanhelper)

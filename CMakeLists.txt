@@ -13,6 +13,15 @@ set(CMAKE_CXX_STANDARD 17) # c++17
 set(CMAKE_CXX_STANDARD_REQUIRED ON) # yes this version is required
 set(CMAKE_CXX_EXTENSIONS OFF) # no extensions
 
+set(VULKAN_HELPER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # interface library
 add_library(vulkanhelper INTERFACE)
-target_include_directories(vulkanhelper INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(vulkanhelper INTERFACE ${VULKAN_HELPER_INCLUDE_DIR})
+message("-- VULKAN HELPER INCLUDE DIR : " ${VULKAN_HELPER_INCLUDE_DIR})
+
+# add build
+option(BUILD_EXAMPLES "Enable to build examples" ON)
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
