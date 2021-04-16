@@ -827,6 +827,48 @@ namespace Vulkan{
             return depthStencilStateInfo;
         }
 
+        /**
+         * @brief descriptor set layout binding initializer
+         *
+         * @param binding is binding number in shader
+         * @return VkDescriptorSetLayoutBinding
+         */
+        [[nodiscard]] inline VkDescriptorSetLayoutBinding DescriptorSetLayoutBinding(const uint32& binding, const VkDescriptorType& descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, const VkShaderStageFlags& shaderStageFlags = VK_SHADER_STAGE_VERTEX_BIT){
+            // initialize
+            VkDescriptorSetLayoutBinding layoutBinding = {};
+            layoutBinding.binding          = binding;
+            layoutBinding.descriptorCount  = 1;
+            layoutBinding.descriptorType   = descriptorType;
+            layoutBinding.stageFlags       = shaderStageFlags;
+
+            // return
+            return layoutBinding;
+        }
+
+        /** 
+         * @brief write descriptor set initializer
+         * 
+         * @param binding is binding number in shader to write to
+         * @param dstSet is what set to write to
+         * @param descriptorType is uniform/sampler/storage... ?
+         * @param bufferInfo is information of buffer that will be written
+         * 
+         * @return 
+         */
+        [[nodiscard]] inline VkWriteDescriptorSet WriteDescriptorSet(const uint32& binding, const VkDescriptorSet& dstSet, const VkDescriptorType& descriptorType, const VkDescriptorBufferInfo bufferInfo){
+            // initialize
+            VkWriteDescriptorSet write = {};
+            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write.dstBinding = binding;
+            write.dstSet = dstSet;
+            write.descriptorCount = 1;
+            write.descriptorType = descriptorType;
+            write.pBufferInfo = &bufferInfo;
+
+            // return
+            return write;
+        }
+
     } // namespace Init
 
 } // namespace Vulkan
