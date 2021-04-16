@@ -17,6 +17,7 @@ set(VULKAN_HELPER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # interface library
 add_library(vulkanhelper INTERFACE)
+target_link_libraries(vulkanhelper INTERFACE vulkan SDL2 SDL2main)
 target_include_directories(vulkanhelper INTERFACE ${VULKAN_HELPER_INCLUDE_DIR})
 message("-- VULKAN HELPER INCLUDE DIR : " ${VULKAN_HELPER_INCLUDE_DIR})
 
