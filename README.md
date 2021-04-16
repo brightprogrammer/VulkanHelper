@@ -22,7 +22,9 @@ limitations under the License.
 **Vulkan Helper** is a simple, close to Vulkan (C API) interface that connects the Vulkan C API and C++ containers. Using the library might cut down your C code to half. Does not provides Vulkan handle wrappers but instead only Vulkan function wrappers with extra checks done automatically and provides an easy human readable message when something wrong happens.
 
 ### IS IT COMPLETE ?
-Not yet, but it can give you approx every function to create a simple renderer (a noob one). Little help is highly appreciated.
+Not yet, but it can give you approx every function to create a simple renderer (a noob one). Little help is highly appreciated. The project in developed as I learn Vulkan.  
+I am working on my own Vulkan Renderer and I keep adding Vulkan wrapper functions as I go.
+So in theory the library won't be complete ever but instead it will be close to completion.
 
 ### HOW DO I USE IT ?
 There are three namespaces `Vulkan`, `Vulkan::Tools` and `Vulkan::Init`.  
