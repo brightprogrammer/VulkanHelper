@@ -855,7 +855,7 @@ namespace Vulkan{
          * 
          * @return 
          */
-        [[nodiscard]] inline VkWriteDescriptorSet WriteDescriptorSet(const uint32& binding, const VkDescriptorSet& dstSet, const VkDescriptorType& descriptorType, const VkDescriptorBufferInfo bufferInfo){
+        [[nodiscard]] inline VkWriteDescriptorSet WriteDescriptorSet(const uint32& binding, const VkDescriptorSet& dstSet, const VkDescriptorType& descriptorType, const VkDescriptorBufferInfo& bufferInfo){
             // initialize
             VkWriteDescriptorSet write = {};
             write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
