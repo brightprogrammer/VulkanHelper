@@ -78,4 +78,11 @@ typedef std::vector<const char*> Names;
         ASSERT(VulkanHandle != VK_NULL_HANDLE, "Invalid Vulkan handle passed as parameter [ parameter name : %s ]", #VulkanHandle)
 #endif
 
+// define layer name macros
+#define VK_LAYER_KHRONOS_VALIDATION_NAME        "VK_LAYER_KHRONOS_validation"
+#define VK_LAYER_LUNARG_API_DUMP_NAME           "VK_LAYER_LUNARG_api_dump"       
+#define VK_LAYER_LUNARG_DEVICE_SIMULATION_NAME  "VK_LAYER_LUNARG_device_simulation" 
+#define VK_LAYER_LUNARG_MONITOR_NAME            "VK_LAYER_LUNARG_monitor"
+#define VK_LAYER_LUNARG_SCREENSHOT_NAME         "VK_LAYER_LUNARG_screenshot"
+
 #endif//CORE_HPP
