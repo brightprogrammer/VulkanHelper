@@ -28,7 +28,7 @@ void Renderer::CreateInstance(){
 
     // create instance create info
     // this is how it's done with initializer
-    auto instanceCreateInfo = Vulkan::Init::InstanceCreateInfo(&appInfo, extensions, layers);
+    auto instanceCreateInfo = Vulkan::Init::InstanceCreateInfo(appInfo, extensions, layers);
 
     // you can set extra things after initializing
     // for example, you can pass instance extension related stuff in VkInstanceCreateInfo::pNext
