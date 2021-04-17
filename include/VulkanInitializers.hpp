@@ -68,17 +68,17 @@ namespace Vulkan{
         /**
         * @brief VkInstanceCreateInfo Initializer
         * 
-        * @param applicationInfo pointer to VkApplicationInfo
+        * @param applicationInfo const reference to VkApplicationInfo
         * @param extensions vector of const char* containing names of extensions to be enabled
         * @param layers vector of const char* containing names of layers to be enabled
         * @return VkInstanceCreateInfo filled with basic information
         */
-        [[nodiscard]] inline VkInstanceCreateInfo InstanceCreateInfo(const VkApplicationInfo* applicationInfo, 
+        [[nodiscard]] inline VkInstanceCreateInfo InstanceCreateInfo(const VkApplicationInfo& applicationInfo, 
             const std::vector<const char*>& extensions, const std::vector<const char*>& layers) noexcept{
             // intialize
             VkInstanceCreateInfo instanceCreateInfo = {};
             instanceCreateInfo.sType                        = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-            instanceCreateInfo.pApplicationInfo             = applicationInfo;
+            instanceCreateInfo.pApplicationInfo             = &applicationInfo;
             instanceCreateInfo.enabledExtensionCount        = static_cast<uint32>(extensions.size());
             instanceCreateInfo.ppEnabledExtensionNames      = extensions.data();
             instanceCreateInfo.enabledLayerCount            = static_cast<uint32>(layers.size());
