@@ -89,13 +89,20 @@ namespace Vulkan{
             return instanceCreateInfo;
         }
 
+        /**
+         * @brief device queue create info initializer
+         * 
+         * @param queueIdx index of queue family to create queue from
+         * @param queuePriorities priorities of different queues that will be created
+         * @return VkDeviceQueueCreateInfo 
+         */
         [[nodiscard]] inline VkDeviceQueueCreateInfo DeviceQueueCreateInfo(const uint32& queueIdx,
-            const uint32& queueCount, const float* queuePriorities) noexcept{
+            const std::vector<float>& queuePriorities) noexcept{
             // intialize
             VkDeviceQueueCreateInfo queueCreateInfo = {};
             queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueCount       = queueCount;
-            queueCreateInfo.pQueuePriorities = queuePriorities;
+            queueCreateInfo.queueCount       = queuePriorities.size();
+            queueCreateInfo.pQueuePriorities = queuePriorities.data();
             queueCreateInfo.queueFamilyIndex = queueIdx;
 
             // return
