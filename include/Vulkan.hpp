@@ -5,8 +5,6 @@
  * @version 0.1
  * @date 2021-04-05
  * 
- * @copyright Copyright (c) 2021 Siddharth Mishra, All Rights Reserved.
- * 
  */
 
  /**
@@ -109,70 +107,6 @@ namespace Vulkan{
             layerNames[i] = layers[i].layerName;
 
         return layerNames;
-    }
-
-    /**
-    * @brief C string specialization
-    * 
-    * @param container list of names
-    * @param object name
-    * @return true found
-    * @return false not found
-    */
-    [[nodiscard]] inline bool CheckAvailability(const Names& container, const char* object){
-        // check if object is present or not
-        for(const auto& obj : container){
-            if(!strcmp(obj, object)){
-                return true;
-            }
-        }
-
-        // if not present then return false
-        return false;
-    }
-
-    /**
-    * @brief Check if an object is available in a list of objects
-    * 
-    * @tparam T type of object
-    * @param container list of objects
-    * @param object specifc object
-    * @return true found
-    * @return false not found
-    */
-    template<typename T>
-    [[nodiscard]] inline bool CheckAvailability(const std::vector<T>& container, const T& object){
-        // check if object is present or not
-        for(const auto& obj : container){
-            if(obj == object){
-                return true;
-            }
-        }
-
-        // if not present then return false
-        return false;
-    }
-
-    /**
-    * @brief C++ string specialization
-    * 
-    * @tparam empty
-    * @param container vector of std::string 
-    * @param object std::string name
-    * @return true found
-    * @return false not found
-    */
-    template<>
-    [[nodiscard]] inline bool CheckAvailability<std::string>(const std::vector<std::string>& container, const std::string& object){
-        // check if object is present or not
-        for(const auto& obj : container){
-            if(strcmp(obj.c_str(), object.c_str()) == 0){
-                return true;
-            }
-        }
-
-        // if not present then return false
-        return false;
     }
 
     /**
