@@ -1252,19 +1252,6 @@ namespace Vulkan{
     }
 
     /**
-     * @brief end render pass
-     * 
-     * @param cmdBuffer 
-     */
-    inline void CmdBeginRenderPass(const VkCommandBuffer& cmdBuffer){
-        // check valid command buffer handle
-        CHECK_VULKAN_HANDLE(cmdBuffer)
-
-        // end
-        vkCmdEndRenderPass(cmdBuffer);
-    }
-
-    /**
      * @brief Create a Descriptor Set Layout
      * 
      * @param device 
