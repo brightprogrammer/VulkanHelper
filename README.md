@@ -79,51 +79,37 @@ void Renderer::SelectPhysicalDevice(){
 ```c++
 // create logical device
 void Renderer::CreateDevice(){
-    // get graphics and present queue index
-    // the index getters return an integer value
-    // index >= 0 means index is valid
-    // index < 0  means index is invalid
-    int graphicsQueueIdx = Vulkan::GetPhysicalDeviceQueueFamilyIndex(physicalDevice, VK_QUEUE_GRAPHICS_BIT);
-    // get queue index that support surface presentation
-    int presentQueueIdx  = Vulkan::GetPhysicalDeviceSurfaceSupportQueueIndex(physicalDevice, surface);
-
-    // assert macro is provided by Core.hpp
-    // first parameter is the condition
-    // second parameter is the message to be displayed
-    ASSERT(graphicsQueueIdx > 0 && presentQueueIdx > 0, "\tInvalid queue indices returned");
-
-    // queue create infos must contain unique indices
-    // on most gpus graphics and surface support queues are same
-    // but some of them might have it in different queues
-    // this is a consquence of supporting multiple types of op in one queue
-    std::set<uint32> uniqueQueueIndices{
-        graphicsQueueIdx, presentQueueIdx
-    };
-
-    // queue priority
-    float queuePriority{1.f};
+    // device extensions
+    Names extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
     // queue create infos
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-    // create the unique queue create infos
-    for(const auto& idx : uniqueQueueIndices){
-        queueCreateInfos.push_back(Vulkan::Init::DeviceQueueCreateInfo(idx, 1, &queuePriority));
-    }
+    // get queue indices
+    graphicsIdx = Vulkan::GetPhysicalDeviceQueueFamilyIndex(physicalDevice, VK_QUEUE_GRAPHICS_BIT);
+    // be sure to check if queue is present on selected device before creation
+    ASSERT(graphicsIdx.has_value(), "NO GRAPHICS QUEUE FAMILY PRESENT ON SELECTED DEVICE");
+    presentIdx  = Vulkan::GetPhysicalDeviceSurfaceSupportQueueIndex(physicalDevice, surface); 
+    ASSERT(presentIdx.has_value(), "SELECTED DEVICE DOESN'T SUPPORT SURFACE PRESENTATION");
 
-    // device extensions
-    // device selection already checks for this extension so add it directly
-    Names extensions {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    // unique queue indices
+    std::set<uint32> uniqueQueueIndices = {graphicsIdx.value(), presentIdx.value()};
 
-    // create device create info using initializers
-    VkDeviceCreateInfo deviceCreateInfo 
-        = Vulkan::Init::DeviceCreateInfo(extensions, queueCreateInfos);
+    // queue priorities : since we are creating only one queue, only one value in vector
+    std::vector<float> queuePriorities = {float{1.f}};
+    
+    // add unique queues to queue create infos vector
+    for(const auto& queueIdx : uniqueQueueIndices)
+        queueCreateInfos.push_back(Vulkan::Init::DeviceQueueCreateInfo(queueIdx, queuePriorities));
+    
+    // device create info
+    VkDeviceCreateInfo deviceCreateInfo = Vulkan::Init::DeviceCreateInfo(extensions, queueCreateInfos);
 
     // create device
     device = Vulkan::CreateDevice(physicalDevice, deviceCreateInfo);
 
-    // get graphics queue after creating logical device
-    graphicsQueue = Vulkan::GetDeviceQueue(device, graphicsQueueIdx.value(), 0);
+    // get created device queue
+    graphicsQueue = Vulkan::GetDeviceQueue(device, graphicsIdx.value(), 0);
 }
 ```
 
