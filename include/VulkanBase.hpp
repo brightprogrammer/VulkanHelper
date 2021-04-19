@@ -279,6 +279,34 @@ namespace Vulkan{
                 }
             }
 
+            /**
+             * @brief one call destroy of all created vulkan handles
+             * 
+             * @warning use this only when all handles were created otherwise it will call std::exit(-1)
+             *
+             */
+            inline void Destroy(){
+                // wait for device to be idle
+                Vulkan::DeviceWaitIdle(device);
+
+                // destroy image views
+                for(const auto& imageView : imageViews){
+                    Vulkan::DestroyImageView(device, imageView);
+                }
+
+                // destroy swapchain
+                Vulkan::DestroySwapchain(device, swapchain);
+
+                // destroy device
+                Vulkan::DestroyDevice(device);
+
+                // destroy surface
+                Vulkan::DestroySurface(instance, surface);
+
+                // destroy instance
+                Vulkan::DestroyInstance(instance);
+            }
+
         }; // VulkanBase
     } // tools namespace
 } // vulkan namespace
