@@ -141,6 +141,14 @@ namespace Vulkan{
             }
 
             /**
+             * @brief enables all surface specifc extensions for instance creation.
+             * 
+             */
+            inline void EnableSurfaceExtensions(){
+                instanceExtensions = Vulkan::Tools::GetSurfaceExtensions();
+            }
+
+            /**
              * @brief Enable an instance layer.
              *        If layer is already enabled in nothing will happen (true will be returned)
              *
@@ -161,10 +169,8 @@ namespace Vulkan{
 
             /**
             * @brief Creates a Vulkan instance and stores it in VulkanBase::instance.
-            *        Surface extensions are already requested if window is set to some
-            *        valid pointer. If not set then user must request instances extensions 
-            *        using VulkanBase::EnableInstanceExtension(extensionName) call.
-            *        Similarly user can request instance layers using EnableInstanceLayer(...)
+            *        To enable instance extensions, simply push_back extension/layer name in
+            *        instanceExtensions and instanceLayers or use EnableInstanceExtension/Layer
             *
             */
             inline void CreateInstance(){

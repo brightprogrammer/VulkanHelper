@@ -41,4 +41,8 @@
 // heler tools in selection
 #include "VulkanTools.hpp"
 
+// vulkan base for speedy initialization of vulkan
+#include "VulkanBase.hpp"
+
+
 #endif//VULKAN_HELPER_HEADER
