@@ -280,6 +280,24 @@ namespace Vulkan{
             }
 
             /**
+             * @brief One call initialize everyting.
+             *        Surface extensions are enabled and Swapchain device extenion is enabled
+             *        by default.
+             * 
+             * @param window 
+             */
+            inline void Initialize(SDL_Window* window){
+                EnableSurfaceExtensions();
+                CreateInstance();
+                CreateSurface(window);
+                SelectPhysicalDevice();
+                EnableDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+                CreateDevice();
+                CreateSwapchain();
+                CreateImageViews();
+            }
+
+            /**
              * @brief one call destroy of all created vulkan handles
              * 
              * @warning use this only when all handles were created otherwise it will call std::exit(-1)
