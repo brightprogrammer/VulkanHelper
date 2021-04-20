@@ -153,7 +153,7 @@ In the above function the the third parameter is defaulted to empty vector but j
 improve code readability, make a descriptorCopies vector and pass it as parameter.
 
 ### `Vulkan::Tools::VulkanBase` HEADSTART
-Although you can initialize Vulkan on your self by creating everything (instance, device, surface, swapchain,...), you can also use VulkanBase to jumpstart your application in just one call.
+Although you can initialize Vulkan by yourself by creating everything (instance, device, surface, swapchain,...), you can also use VulkanBase to jumpstart your application in just one call.
 VulkanBase will quickly create a VkInstance, VkSurfaceKHR, VkDevice, VkSwapchainKHR and VkImageView (s) for swapchain images. All of this can either be done in a single call or you can do them in multiple function calls. It also stores necessary data like, device queues, image extent, image format etc...
 ```c++
 // include all headers in one shot
@@ -171,7 +171,10 @@ Vulkan::Tools::VulkanBase vulkan;
 vulkan.EnableInstanceExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 vulkan.EnableSurfaceExtensions();
 vulkan.CreateInstance();
-vulkan.CreateSurface();
+// create a surface using an SDL_Window or manually provide an already created surface
+vulkan.CreateSurface(window);
+// select a physical device before creation of logical device or
+// manually give the physical device you like : vulkan.physicalDevice = someGPUthatYouLike;
 vulkan.SelectPhysicalDevice();
 vulkan.EnableDeviceExtension(VK_EXT_SWAPCHAIN_EXTENSION_NAME);
 vulkan.CreateDevice();
@@ -187,6 +190,12 @@ Vulkan::CreateSemaphore(vulkan.device, semaphoreCreateInfo);
 .
 .
 .
+Vulkan::DestroyFramebuffer(vulkan.device, ...);
+Vulkan::DestroyRenderPass(vulkan.device, ...); 
+// one call destruction of vulkan base in safe manner
+vulkan.Destroy();
+// note that all handles must be in their place before you call destroy
+// other wise it will throw errors for invalid handles
 ```
 
 ### CONTRIBUTING
