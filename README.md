@@ -152,6 +152,43 @@ Vulkan::UpdateDescriptorSets(device, descriptorWrites, descriptorCopies); // upd
 In the above function the the third parameter is defaulted to empty vector but just to  
 improve code readability, make a descriptorCopies vector and pass it as parameter.
 
+### `Vulkan::Tools::VulkanBase` HEADSTART
+Although you can initialize Vulkan on your self by creating everything (instance, device, surface, swapchain,...), you can also use VulkanBase to jumpstart your application in just one call.
+VulkanBase will quickly create a VkInstance, VkSurfaceKHR, VkDevice, VkSwapchainKHR and VkImageView (s) for swapchain images. All of this can either be done in a single call or you can do them in multiple function calls. It also stores necessary data like, device queues, image extent, image format etc...
+```c++
+// include all headers in one shot
+#include <VulkanHelper.hpp>
+.
+.
+.
+Vulkan::Tools::VulkanBase vulkan; // contians all handles
+vulkan.Initialize(window); // one call initialize
+.
+.
+.
+Vulkan::Tools::VulkanBase vulkan;
+// or you can initialize them one by one
+vulkan.EnableInstanceExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+vulkan.EnableSurfaceExtensions();
+vulkan.CreateInstance();
+vulkan.CreateSurface();
+vulkan.SelectPhysicalDevice();
+vulkan.EnableDeviceExtension(VK_EXT_SWAPCHAIN_EXTENSION_NAME);
+vulkan.CreateDevice();
+vulkan.CreateSwapcahain();
+vulkan.CreateImageViews();
+.
+.
+.
+// you can store the handles like
+instance = vulkan.instance
+// or you can use them directly
+Vulkan::CreateSemaphore(vulkan.device, semaphoreCreateInfo);
+.
+.
+.
+```
+
 ### CONTRIBUTING
 Any type of contribution is appreciated. Do take a look at the code commenting style and other stuff to keep the as readable as possible.
 
